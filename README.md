@@ -9,23 +9,23 @@ A collection of scripts and tools I use to manage my smart-home.
  - [Devices](#devices)
  
  ## Sensors
- ### Electricity
+ #### Electricity
  * E-Meter
  * Solar
  * Batteries
  
- ### Environment
+ #### Environment
  * Weather Station
  
  ## Services
- ### MQTT-Listener
+ #### MQTT-Listener
  
  ## Devices
- ### Amazon Echo
- ### Google Home
- ### Philips HUE
- ### Neeo Smart Remote
- ### EnOcean radio switches
+ #### Amazon Echo
+ #### Google Home
+ #### Philips HUE
+ #### Neeo Smart Remote
+ #### EnOcean radio switches
  
  Since there's a huge amount of different concepts and technologies floating around the market, I chose to glue it all together via MQTT. Diverse **sensors** meter things at various (network-) locations and dump their values to an MQTT-Broker.
  **Services** listen to specific 'topics' from the MQTT broker and then act accordingly.
