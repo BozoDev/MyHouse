@@ -1,5 +1,5 @@
 #!/bin/bash
-dirs="mqtt_publisher solar"
+dirs="mqtt_publisher emeter solar"
 
 for dir in $dirs
 do

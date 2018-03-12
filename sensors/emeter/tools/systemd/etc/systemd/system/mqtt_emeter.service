@@ -1,0 +1,19 @@
+[Unit]
+Description=Service to read emeter and publish to MQTT
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+User=mqtt-service
+WorkingDirectory=/var/lib/mqtt-sensors
+EnvironmentFile=/etc/default/mqtt_emeter
+PermissionsStartOnly=true
+ExecStartPre=/var/lib/mqtt-sensors/startup.sh
+ExecStart=/var/lib/mqtt-sensors/mqtt_emeter.sh
+Restart=on-failure
+RestartSec=10
+KillMode=process
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

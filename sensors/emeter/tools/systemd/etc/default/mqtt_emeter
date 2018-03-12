@@ -1,0 +1,8 @@
+# Settings for E-Meter publisher
+reader_bin="/usr/local/bin/emeter-reader.py"
+mqtt_broker="localhost.localdomain"
+mqtt_topic="sensors/emeter/watt"
+mqtt_publish=1
+rrd_update=1
+rrd_db="/run/emeter/emeter.rrd"
+
