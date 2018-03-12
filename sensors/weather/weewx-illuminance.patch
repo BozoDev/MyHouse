@@ -1,0 +1,10 @@
+--- /usr/share/weewx/weewx/drivers/fousb.py	2017-11-22 14:36:48.000000000 +0100
++++ fousb.py	2018-02-09 17:28:46.757622660 +0100
+@@ -598,6 +598,7 @@
+     'radiation'   : ('illuminance',  0.01075), # lux, weewx wants W/m^2
+     'UV'          : ('uv',           1.0),
+     'status'      : ('status',       1.0),
++    'illuminance' : ('illuminance',  1.0),
+ }
+ 
+ # formats for displaying fixed_format fields
