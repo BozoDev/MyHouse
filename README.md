@@ -5,6 +5,8 @@ A collection of scripts and tools I use to manage my smart-home.
 ## Table of Contents
 
  - [Sensors](#sensors)
+ - [Seriveces](#services)
+ - [Devices](#devices)
  
  ## Sensors
  ### Electricity
