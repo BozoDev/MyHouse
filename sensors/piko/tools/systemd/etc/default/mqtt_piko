@@ -1,8 +1,12 @@
 # Settings for Kostal-Piko publisher
 DEBUG=0
-mqtt_broker="localhost.localdomain"
+# IP or name of the Kostal-Piko inverter:
+_host="solar.local"
+# ID - as found in web-gui RS485 field:
+_id=1
+
+mqtt_broker="mqtt.local"
 mqtt_topic="sensors/solar"
 mqtt_publish=1
-rrd_update=1
+rrd_update=0
 rrd_db="/run/solar/piko.rrd"
-
