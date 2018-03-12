@@ -2,6 +2,7 @@
 
 echo "Copy & paste the following commands:"
 
+echo "sudo apt-get install nc mosquitto-clients"
 echo "sudo useradd -r -s \"/usr/sbin/nologin\" -d \"/var/lib/mqtt-service\" -m -c \"User to run MQTT\" mqtt-service -U mqtt-service"
 echo "sudo mkdir -p /var/lib/mqtt-sensors"
 echo "sudo chown mqtt-service /var/lib/mqtt-sensors"
