@@ -17,7 +17,7 @@ A collection of scripts and tools I use to manage my smart-home.
  
  
  #### Environment
- * [Weather](#weather station) Station
+ * [Weather Station](#weather)
  
  
  ## Services
@@ -45,7 +45,7 @@ Another example would be Wemos "server" implemented in Python, listening for req
  - Apple's homebridge I've implemented, but neglected - it's just too clumsy to look for my iPad and then tell it or Siri to turn on the dining light (though it's path is also local) - I might as well press the EnOcean-radio switch
  
  
- #### Weather Station
+ #### Weather
  
  A cheap & simple weather station WS3080 by Velleman, connected to Raspi with [Weewx](http://weewx.com) and added [MQTT-Module](http://lancet.mit.edu/mwall/projects/weather/releases/weewx-mqtt-0.17.tgz). I installed the debian package from the download page, downloaded the mqtt-extension and ran "wee_extension --install weewx-mqtt-0.17.tgz" to have the **sensor** publishing to the mqtt topic "sensors/weather/\*". I also [patched the driver](sensors/weather/) to include the illuminance value.
  
