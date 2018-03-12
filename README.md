@@ -17,7 +17,7 @@ A collection of scripts and tools I use to manage my smart-home.
  
  
  #### Environment
- * [Weather](#weather) Station
+ * [Weather](#weather station) Station
  
  
  ## Services
