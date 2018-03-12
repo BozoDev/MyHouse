@@ -1,0 +1,8 @@
+# Settings for Kostal-Piko publisher
+DEBUG=0
+mqtt_broker="localhost.localdomain"
+mqtt_topic="sensors/solar"
+mqtt_publish=1
+rrd_update=1
+rrd_db="/run/solar/piko.rrd"
+
