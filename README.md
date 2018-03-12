@@ -12,7 +12,7 @@ A collection of scripts and tools I use to manage my smart-home.
  ## Sensors
  #### Electricity
  * [E-Meter](sensors/emeter)
- * Solar
+ * [Solar](sensors/piko)
  * Batteries
  
  
@@ -21,7 +21,7 @@ A collection of scripts and tools I use to manage my smart-home.
  
  
  ## Services
- #### MQTT-Listener
+ #### [MQTT-Listener](services/)
  
  
  ## Devices
