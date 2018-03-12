@@ -11,7 +11,7 @@ A collection of scripts and tools I use to manage my smart-home.
  
  ## Sensors
  #### Electricity
- * E-Meter
+ * [E-Meter](sensors/emeter)
  * Solar
  * Batteries
  
