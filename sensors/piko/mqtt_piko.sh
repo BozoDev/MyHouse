@@ -53,8 +53,8 @@ done
 DEBUG=${DEBUG:-0}
 _host=${_host:-"solar"}
 _port=${_port:-81}
-_id=${_id:-3}
-mqtt_broker=${mqtt_broker:-"pi3gate.localdomain"}
+_id=${_id:-255}
+mqtt_broker=${mqtt_broker:-"localhost.localdomain"}
 mqtt_topic=${mqtt_topic:-"sensors/solar"}
 mqtt_bin="/usr/bin/mosquitto_pub"
 mqtt_publish=${mqtt_publish:-1}
@@ -62,8 +62,8 @@ rrd_update=${rrd_update:-0}
 [ $rrd_update -gt 0 ] && rrd_db=${rrd_db:-"/run/solar/piko.rrd"}
 _vals[0]=0
 # Some versions of nc require '-q 2' (rasbian on a Pi3), others will not work with it
-_nc="/bin/nc -w 2"
-# _nc="/bin/nc -q 2 -w 2"
+# _nc="/bin/nc -w 2"
+_nc="/bin/nc -q 2 -w 2"
 
 _id="$( printf '%x' $_id )"
 [ ${#_id} -lt 2 ] && _id="0${_id}"
@@ -113,7 +113,7 @@ _readValsFromPiko() {
 #  1 0-length reply (correct IP/Port?)
 #  2 Checksum mismatch
 #  3 reply-header mismatch
-  local _cmd="$1" _hdr="\\x62\\x${_id}\\x03\\x${_id}\\x00" _csum=0 _reply="" i="" _r[0]="" _t=""
+  local _cmd="$1" _hdr="\\x62\\x${_id}\\x03\\x${_id}\\x00" _csum=0 _request="" _reply="" i="" _r[0]="" _t=""
 
   _request="$_hdr\\x$_cmd"
   [ $DEBUG -gt 3 ] && >&2 echo "DEBUG: sending \"$_request\" to csum"
