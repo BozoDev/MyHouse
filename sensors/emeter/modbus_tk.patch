@@ -1,0 +1,47 @@
+--- modbus-tk-dist/modbus_tk/modbus.py	2018-02-19 12:32:57.786042390 +0100
++++ modbus/modbus-tk/modbus_tk/modbus.py	2018-02-22 10:47:44.106280248 +0100
+@@ -175,7 +175,7 @@
+             if expected_length < 0:
+                 # No length was specified and calculated length can be used:
+                 # slave + func + bytcodeLen + bytecode x 2 + crc1 + crc2
+-                expected_length = 2 * quantity_of_x + 5
++                expected_length = 2 * quantity_of_x + 6
+ 
+         elif (function_code == defines.WRITE_SINGLE_COIL) or (function_code == defines.WRITE_SINGLE_REGISTER):
+             if function_code == defines.WRITE_SINGLE_COIL:
+@@ -289,7 +289,6 @@
+             request = retval
+         if self._verbose:
+             LOGGER.debug(get_log_buffer("-> ", request))
+-            print("Expect bytes: %i" % expected_length )
+         self._send(request)
+ 
+         call_hooks("modbus.Master.after_send", (self, ))
+@@ -302,13 +301,24 @@
+                 response = retval
+             if self._verbose:
+                 LOGGER.debug(get_log_buffer("<- ", response))
++                _deb= ""
++                buff = bytearray(response[0:])
++                for i in buff:
++                  _deb += '{0:02x}'.format(int(i)) + "-"
++                print("DEBUG: Values in hex " + _deb )
++
++            # My adapter suddenly started receiving a leading '0' 
++            #  - can't be bothered to figure out why
++            #  - it happened after playing with FTDI direct drivers
++            #  - so, we'll just drop it
++            if response[0] == b'\x00':
++              response = response[1:]
++              if self._verbose:
++                print("Dropping leading 0")
+ 
+             # extract the pdu part of the response
+             response_pdu = query.parse_response(response)
+ 
+-            if self._verbose:
+-                LOGGER.debug(get_log_buffer("<- ", response_pdu))
+-
+             # analyze the received data
+             (return_code, byte_2) = struct.unpack(">BB", response_pdu[0:2])
+ 
