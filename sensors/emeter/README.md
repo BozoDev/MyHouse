@@ -7,8 +7,10 @@ It retrieves the values via a small python snippet & publishes them to an MQTT B
 
 #### Installation
 
+'sudo pip install modbus-tk'
+
 Best choice is probably to install as systemd-service. Check the files provided in the tools folder.
 
 #### Note
-I have strange "echos" on my RS485 line. Possibly due to my sloppy cable wiring, but more likely due to my USB-to-RS485 adapter. To cut a long story short, research "FTDI RS485 modbus trailing 1". Which is where I started - conclusion: there seems to be a design issue with USB adapters and Modbus, mainly due to timing requirements. Whilst receiving those trailing chars that mucked up error-detection, I decided to try FTDI's linux drivers (not the kernel included ones). I downloaded compiled & then ran every example once to see which one would suit me best. After that I realized the trailing char had gone, only to be replaced by a leading one now. Unwilling to plough through all the examples and figure out which one changed what/which FTDI internal registers of my Digitus RS485 to USB adapter (let alone research the original setting), decided to patch the modbus_tk lib to try and ignore the obviously stray 1st byte. Works (nearly all-)most of the time.
+I have strange "echos" on my RS485 line. Possibly due to my sloppy cable wiring, but more likely due to my USB-to-RS485 adapter. To cut a long story short, research "FTDI RS485 modbus trailing 1". Which is where I started - conclusion: there seems to be a design issue with USB adapters and Modbus, mainly due to timing requirements. Whilst receiving those trailing chars that mucked up error-detection, I decided to try FTDI's linux drivers (not the kernel included ones). I downloaded compiled & then ran every example once to see which one would suit me best. After that I realized the trailing char had gone, only to be replaced by a leading zero now. Unwilling to plough through all the examples and figure out which one changed what/which FTDI internal registers of my Digitus RS485 to USB adapter (let alone research the original setting), decided to [patch](modbus_tk.patch) the modbus_tk lib to try and ignore the obviously stray 1st byte. Works (nearly all-)most of the time.
 
