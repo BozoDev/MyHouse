@@ -25,11 +25,11 @@ A collection of scripts and tools I use to manage my smart-home.
  
  
  ## Devices
- * Amazon Echo
- * Google Home
- * Philips HUE
- * Neeo Smart Remote
- * EnOcean radio switches
+ * Amazon Echo&reg;
+ * Google Home&reg;
+ * Philips HUE&reg;
+ * Neeo Smart Remote&reg;
+ * EnOcean&reg; radio switches
  
  
  Since there's a huge amount of different concepts and technologies floating around the market, I chose to glue it all together via MQTT. Diverse **sensors** meter things at various (network-) locations and dump their values to an MQTT-Broker.
@@ -48,4 +48,3 @@ Another example would be Wemos "server" implemented in Python, listening for req
  #### Weather
  
  A cheap & simple weather station WS3080 by Velleman, connected to Raspi with [Weewx](http://weewx.com) and added [MQTT-Module](http://lancet.mit.edu/mwall/projects/weather/releases/weewx-mqtt-0.17.tgz). I installed the debian package from the download page, downloaded the mqtt-extension and ran "wee_extension --install weewx-mqtt-0.17.tgz" to have the **sensor** publishing to the mqtt topic "sensors/weather/\*". I also [patched the driver](sensors/weather/) to include the illuminance value.
- 
