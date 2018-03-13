@@ -1,6 +1,6 @@
 # E-Meter
 
-I have an e-meter Eastron & BG E-Tech called **SDM630-Modbus** - quite a nifty device actually. It has a Modbus-over-RS485 interface, meters 3 phases & can also measure the electricity direction - i.e. tell you if you im- or exporting electricity. They offer that device with a pile of different interfaces (modbus, mbus,...) so pay attention to the details.
+I have an e-meter Eastron & BG E-Tech called **SDM630-Modbus** - quite a nifty device actually. It has a Modbus-over-RS485 interface, meters 3 phases & can also measure the electricity direction - i.e. tell you if you're currently im- or exporting electricity. They offer that device with a pile of different interfaces (modbus, mbus,...) so pay attention to the details.
 
 Here the scripts used to read from an emeter Eastron SDM630-Modbus
 It retrieves the values via a small python snippet & publishes them to an MQTT Broker (and optionally updates an rrd-db).
