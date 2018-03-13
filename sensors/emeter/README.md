@@ -7,8 +7,10 @@ It retrieves the values via a small python snippet & publishes them to an MQTT B
 
 #### Installation
 
-'sudo pip install modbus-tk'
-
+```shell
+sudo pip install modbus-tk
+cp emeter-reader.py /usr/local/bin/
+```
 Best choice is probably to install as systemd-service. Check the files provided in the tools folder.
 
 #### Note
