@@ -94,6 +94,7 @@ _id="$( printf '%x' $_id )"
 # 00000020  f7 03 00 04 09 a1 00 58  01 c0 51 fc 08 a0 00 55  |.......X..Q....U|
 # 00000030  01 c0 51 fc 08 a1 00 56  01 a0 53 4d 1a 3c 00 00  |..Q....V..SM.<..|
 # 00000040  00 06 00 00 00 00 00 55  00                       |.......U.|
+
 _calcSum() {
   local c=0 a="$1" i=""
 
@@ -199,9 +200,10 @@ _getStatus() {
   esac
 }
 
+_sleeper=26
 while true
 do
-  [[ $DEBUG -eq 1 ]] && sleep 26
+  [[ $DEBUG -lt 2 ]] && sleep $_sleeper
   i=0
   # for s in 57 43
   # do
@@ -227,9 +229,10 @@ do
 # Does Status justify further data-requests?
   if [[ $(( 0x${r[0]} )) -lt 3 || $(( 0x${r[0]} )) -gt 5 ]]
   then
+    _sleeper=28
     [[ $DEBUG -gt 1 ]] && exit 0 || continue
   fi
-
+  _sleeper=26
 # Get actual vals
   r=( $( _readValsFromPiko 43 ) )
   _r=$?
