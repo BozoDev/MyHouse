@@ -1,0 +1,95 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:		wemos
+# Required-Start:	$local_fs $remote_fs $network $syslog
+# Required-Stop:	$local_fs $remote_fs $network $syslog
+# Should-Start:
+# Should-Stop:
+# Default-Start:	2 3 4 5
+# Default-Stop:		0 6
+# Short-Description:	Create fake WeMo switches
+### END INIT INFO
+
+PATH="/var/lib/wemos/Python/bin:/sbin:/bin:/usr/sbin:/usr/bin"
+NAME="wemos"
+DESC="Will start a pile of fake WeMo switches"
+PIDFILE="/run/wemos/wemos.pid"
+UPDPID="/run/wemos/mqtt_update.pid"
+
+test -x /var/lib/wemos/Python/bin/python || exit 0
+
+if [ -r "/etc/default/${NAME}" ]
+then
+	. "/etc/default/${NAME}"
+fi
+
+set -e
+
+if [ ! -d /run/wemos ]
+then
+  mkdir /run/wemos
+  chgrp wemos /run/wemos
+  chmod g+s /run/wemos
+  chmod g+w /run/wemos
+  [ -f /var/lib/wemos/lib/switches.sh ] && . /var/lib/wemos/lib/switches.sh || exit 1
+  for i in ${switches[0]}
+  do
+    touch /run/wemos/sub_${i}_light.txt
+  done
+  for i in hedge shed garage terrace ship
+  do
+    touch /run/wemos/sub_${i}_sprinkler.txt
+  done
+  touch /run/wemos/sub_Roomba.txt
+  chown wemos /run/wemos/sub_*
+fi
+
+if [ ! -f /run/wemos/rel_state.txt ]
+then
+  touch /run/wemos/rel_state.txt
+  chmod 0666 /run/wemos/rel_state.txt
+fi
+
+case "${1}" in
+	start)
+		su -s /bin/bash -c ". /var/lib/wemos/Python/bin/activate && /usr/local/bin/wemos.py >>/var/log/wemos.log 2>&1 &" wemos
+		echo "$( ps ax |grep wemos.py |grep -v grep |grep -v bash|awk '{print $1}' )" >$PIDFILE
+    sleep 10
+    su -s /bin/bash -c "/var/lib/wemos/bin/mqtt_wemos_state.sh >>/var/log/wemos.log 2>&1 &" wemos
+    echo "$( ps ax |grep mqtt_wemos_state |grep -v grep |awk '{print $1}' )" >$UPDPID
+		;;
+
+	stop)
+    if [ -f $UPDPID ]
+    then
+      kill -USR1 $( cat $UPDPID )
+      sleep 0.5
+    fi
+		if [ -e $PIDFILE ]
+		then
+      if [ -e /proc/$( cat ${PIDFILE} )/exe ]
+      then
+        ls -al /proc/$( cat ${PIDFILE} )/exe |grep -q python && kill -HUP $( cat $PIDFILE )
+      else
+        echo "Stale PID file"
+      fi
+			rm -f $PIDFILE
+		else
+			echo "No PID file found!"
+		fi
+		;;
+
+  restart)
+    $0 stop
+    sleep $(( 3*60 ))
+    $0 start
+    ;;
+
+	*)
+		echo "Usage: ${0} {start|stop|restart|force-reload}" >&2
+		exit 1
+		;;
+esac
+
+exit 0
