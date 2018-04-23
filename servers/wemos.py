@@ -39,16 +39,14 @@ import signal
 import pickle
 import paho.mqtt.publish as publish
 
-
-# Ugly: should be lights, not switches...
-_switches = [
-              [ "kitchen light", 0],
-              [ "dining light", 0],
-              [ "christmas light", 0],
-              [ "lounge light", 0],
-            ]
-
 _DEBUG = 1
+
+FAUSMOS = []
+_devices = []
+_lighturlbase='http://pi3gate/cgi-bin/relswitch.cgi?'
+_sprinklerurlbase='http://gardenpi/cgi-bin/garden.cgi?'
+_mqtt_broker='pi2gate.localdomain'
+_tmpDir='/run/wemos/'
 
 def _dbg(lvl, msg):
   global _DEBUG
@@ -58,65 +56,82 @@ def _dbg(lvl, msg):
     sys.stdout.flush()
 
 def save_obj(obj, name ):
-    with open('/run/wemos/'+ name + '.pkl', 'w+') as f:
+    with open(_tmpDir + name + '.pkl', 'w+') as f:
         pickle.dump(obj, f, 0)
 
 def load_obj(name ):
-    with open('/run/wemos/' + name + '.pkl', 'r') as f:
+    with open(_tmpDir + name + '.pkl', 'r') as f:
         return pickle.load(f)
 
-def _update_switch_states():
-  # This is old code - there used to be a file on this RPi, that
-  #   kept track of the relais states (e.g. light on/off) and that
-  #   **may** have been altered by other processes (e.g. light-switch
-  #   pressed rather than e.g. Alexa changing it)
-  _fh = open("/run/wemos/rel_state.txt", "r")
-  for line in _fh:
-    _sw, _state = line.split()
-    _switches[int(_sw[3])][1] = _state
-  _fh.close()
-  # print("Switch-States: %s" % _switches)
-  return
-
 def update_switch_states():
-  # Newer version - still ugly though - it only updates all lights
-  #   but not e.g. sprinkler states (due to different URL)
+  global _devices
+  _dbg(0,"In update_switch_states")
   i=0
-  for switch in _switches:
-    _dbg(2,"Getting cmd=q&rel=%s" % switch[0] )
-    _sw,_l = switch[0].split()
-    r = requests.get("http://pi3gate/cgi-bin/relswitch.cgi?cmd=q&rel=%s" % _sw)
-    _state = r.content[0]
-    _dbg(1,"Relais %s returned %s" % (_sw,_state))
-    _dbg(0,"%s was %s and will be %s" % (_switches[i],_switches[i][1],_state))
-    _switches[i][1] = _state
+  for _device in _devices:
+    for _d in FAUXMOS:
+      if _d[0] == _device[0]:
+        if _d[1].can_query():
+          _dbg(2,"In nu update_switch_states updating state of %s from %s" % ( _d[0], _device[1] ))
+          _devices[i][1] = _d[1].query()
+          _dbg(0,"state of %s is now %s" % (_d[0], _devices[i][1]))
+        else:
+          _dbg(0,"Device %s can't query" % _d[0])
+        break
     i += 1
   return
 
 def get_switch_state(_name):
-  for switch in _switches:
-    _sw, _l = switch[0].split(" ")
-    if switch[0] == _name or _sw == _name:
-      _dbg(1,"Found %s in get_switch_state" % _name)
-      return switch[1]
+  _dbg(1,"In get_switch_state for %s" % _name)
+  for one_faux in FAUXMOS:
+    _dbg(3,"checking %s" % one_faux[0])
+    try:
+      _name_f, _type_f = one_faux[0].split()
+    except Exception, e:
+      _dbg(1,"Attempt in get_switch_state to split fauxmo name in name and type failed with %s" % e)
+      _name_f = one_faux[0]
+      _type_f = "switch"
+    if _name == _name_f or _name == one_faux[0]:
+      if one_faux[1].can_query():
+        _dbg(2,"In get_switch_state can query %s" % _name)
+        _state = one_faux[1].query()
+        _dbg(1,"Returning %s from get_switch_statequery-url" % _state)
+        return _state
+    else:
+      continue
   _dbg(0,"Unknow switch %s requsted for get_switch_state" % _name)
+  return -1
+
+def get_cached_switch_state(_name):
+  _dbg(1,"In get_cached_device_states")
+  for _dev in _devices:
+    try:
+      _sw, _l = _dev[0].split(" ")
+    except Exception, e:
+      _sw = _dev[0]
+      _l = "switch"
+    if _dev[0] == _name or _sw == _name:
+      _dbg(1,"Found %s in get_cached_switch_state" % _name)
+      return _dev[1]
+  _dbg(0,"Unknow switch %s requsted for get_cached_switch_state" % _name)
   return -1
 
 def notify_handler(signum, frame):
   _dbg(0,"Signal received - checking for changes and notifying subscribers")
   _chgd=[]
   o=0
-  for switch in _switches:
-    _sw,_l = switch[0].split(" ")
-    r = requests.get("http://pi3gate/cgi-bin/relswitch.cgi?cmd=q&rel=%s" % _sw)
-    _state = r.content[0]
-    _state_o = get_switch_state(_sw)
+  for _dev in _devices:
+    _state = get_switch_state(_dev[0])
+    if _state == -1:
+      o += 1
+      continue
+    _state_o = get_cached_switch_state(_dev[0])
     if _state_o != _state:
-      _dbg(0,"Switch %s changed from %s to %s" % (_switches[o][0], _state_o, _state))
+      _dbg(0,"Switch %s changed from %s to %s" % (_devices[o][0], _state_o, _state))
       i=0
-      for one_faux in FAUXMOS:
-        _dbg(2,"Checking %s aginst %s" % (one_faux[0], _switches[o][0]))
-        if one_faux[0] == _switches[o][0]:
+      for _sw in switches:
+        _dbg(2,"Checking %s aginst %s" % (_sw.name, _dev[0]))
+        if _sw.name == _dev[0]:
+          _dbg(0,"Adding #%s to changed list" % i)
           _chgd.append(i)
           break
         i += 1
@@ -125,11 +140,9 @@ def notify_handler(signum, frame):
   update_switch_states()
   _dbg(1,"Notifying these: %s" % _chgd)
   for _chg in _chgd:
+    _dbg(0,"Will send notify to: %s" % switches[_chg].name )
     switches[_chg].notify_subscribers()
-    _dbg(2,"Done: %s" % _chg)
-
-update_switch_states()
-signal.signal(signal.SIGUSR1, notify_handler)
+    _dbg(2,"Notified: %s" % _chg)
 
 def remove_subscribers(_self, subs):
   _dbg(0,"Entering remove_subscribers")
@@ -159,7 +172,6 @@ def send_event(_self):
     _dbg(0,"Received Subs: %s" % subscriptions)
     subscr = {}
     for subscr in subscriptions:
-      # subscr = _self.get_subscription(_self.name)
       _dbg(1,"Received Sub: %s" % subscr)
       ip = subscr['ip']
       port = subscr['port']
@@ -202,8 +214,8 @@ def send_event(_self):
       _tmpsock.shutdown(socket.SHUT_RDWR)
       _tmpsock.close()
       del(_tmpsock)
-      #_dev = _self.name.replace(" ", "_")
       _dev = _self.name
+      _type = "Unknown"
       try:
         _item, _type = _dev.split(" ")
       except Exception, e:
@@ -211,13 +223,18 @@ def send_event(_self):
         _dbg(2,e)
         _type = "Other"
         _item = _self.name
+      _mqtt_topic = ""
       if _type == "light":
-        publish.single("lights/%s/state" % _dev, "%s" % _state, 0, True, "pi2gate.localdomain", 1883, "pigate/wemos", 60)
+        _mqtt_topic = 'lights'
+      elif _type == "sprinkler":
+        _mqtt_topic = 'sprinkerls'
+      if _mqtt_topic != "":
+        publish.single("%s/%s/state" % ( _mqtt_topic, _dev ), "%s" % _state, 0, True, "%s" % _mqtt_broker, 1883, "pigate/wemos", 60)
     if subscriptions_e:
       _dbg(0,"Removing subscribers %s" % subscriptions_e)
       remove_subscribers(_self, subscriptions_e)
     else:
-      _dbg(1,"No subscribers to remove")
+      _dbg(0,"No subscribers to remove")
     return True
 
 # <deviceType>urn:MakerMusings:device:controllee:1</deviceType>
@@ -608,24 +625,21 @@ class upnp_device(object):
         _tmpsock.close()
         del(_tmpsock)
 
-#       temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#       temp_socket.sendto(message, destination)
-#       temp_socket.shutdown(socket.SHUT_RDWR)
-#       temp_socket.close()
-
 # This subclass does the bulk of the work to mimic a WeMo switch on the network.
 
 class fauxmo(upnp_device):
-    _seq=0
+    _seq=-1
     @staticmethod
     def make_uuid(name):
         return ''.join(["%x" % sum([ord(c) for c in name])] + ["%x" % ord(c) for c in "%sfauxmo!" % name])[:14]
 
     def update_subscription( _self, subs, subsurl):
-        _dbg(2,"Entering update_subscription")
+        _dbg(0,"Entering update_subscription")
+        _filename = _tmpDir + "sub_%s.txt" % _self.name.replace(' ', '_')
         _filename_l = _self.subsfile
         _nusubs = []
         _host, _port = subs.split(":")
+        _nusubs[:] = []
         f = 0
         _subsr = []
         try:
@@ -660,13 +674,6 @@ class fauxmo(upnp_device):
           _nusubs.append({'ip': _host, 'port': _port, 'url': subsurl})
         save_obj(_nusubs, _filename_l)
         return
-
-    def get_subscription_o(_self, name):
-      _filename = "/run/wemos/sub_%s.txt" % name.replace(' ', '_')
-      _fh = open(_filename,"r")
-      subs = _fh.read()
-      _fh.close()
-      return "%s" % subs
 
     def notify_subscribers(_self):
       send_event(_self)
@@ -711,7 +718,7 @@ class fauxmo(upnp_device):
         self.dev_type = dev_type
         self.subsfile = "sub_l_%s" % name.replace(' ', '_')
         persistent_uuid = "Socket-1_0-" + self.serial
-        _fh = open("/run/wemos/" + self.subsfile + ".pkl", "a")
+        _fh = open(_tmpDir + self.subsfile + ".pkl", "a")
         _fh.close
         other_headers = ['X-User-Agent: redsonic']
         upnp_device.__init__(self, listener, poller, port, "http://%(ip_address)s:%(port)s/setup.xml", "Unspecified, UPnP/1.0, Unspecified", persistent_uuid, other_headers=other_headers, ip_address=ip_address)
@@ -725,8 +732,8 @@ class fauxmo(upnp_device):
         return self.name
 
     def handle_request(self, data, sender, socket):
-        _dbg(0,"Handling req. from %s:%s" % (socket.getpeername()))
-        _dbg(1,"Received socket data: \"%s\"" % data)
+        _dbg(1,"Handling req. from %s:%s" % (socket.getpeername()))
+        _dbg(2,"Received socket data: \"%s\"" % data)
         if data.find('GET /setup.xml HTTP/1.1') == 0:
             _dbg(0, "Responding to setup.xml for %s" % self.name)
             xml = SETUP_XML % {'device_type' : self.dev_type, 'device_name' : self.name, 'device_port' : self.port, 'device_serial' : self.serial}
@@ -743,7 +750,7 @@ class fauxmo(upnp_device):
                        "%s" % (len(xml), date_str, xml))
             socket.send(message)
         elif data.find('GET /eventservice.xml HTTP/1.1') != -1:
-            dbg(0,"Responding to eventservice.xml for %s" % self.name)
+            _dbg(0,"Responding to eventservice.xml for %s" % self.name)
             xml = EVENTSERVICE_XML % {}
             date_str = email.utils.formatdate(timeval=None, localtime=False, usegmt=True)
             message = ("HTTP/1.1 200 OK\r\n"
@@ -758,7 +765,7 @@ class fauxmo(upnp_device):
                        "%s" % (len(xml), date_str, xml))
             socket.send(message)
         elif data.find('GET /rulesservice.xml HTTP/1.1') != -1:
-          dbg(0,"Responding to rulesservice.xml for %s" % self.name)
+          _dbg(0,"Responding to rulesservice.xml for %s" % self.name)
           _fh = open("/etc/wemos/rulesservice.xml","r")
           xml = _fh.read()
           _fh.close()
@@ -775,7 +782,7 @@ class fauxmo(upnp_device):
                      "%s" % (len(xml), date_str, xml))
           socket.send(message)
         elif data.find('GET /deviceservice.xml HTTP/1.1') != -1:
-          dbg(0,"Responding to deviceservice.xml for %s" % self.name)
+          _dbg(0,"Responding to deviceservice.xml for %s" % self.name)
           _html='<html><body><h1>404 Not Found</h1></body></html>'
           message = ("HTTP/1.1 404 Not Found\r\n"
                      "CONTENT-LENGTH: %d\r\n"
@@ -786,7 +793,7 @@ class fauxmo(upnp_device):
                      "%s" % (len(xml), _html))
           socket.send(message)
         elif data.find('SUBSCRIBE /upnp/event/basicevent1') != -1:
-          _dbg(0, "Responding to Subscribe for %s by %s" % (self.name, socket.getpeername()))
+          _dbg(1, "Responding to Subscribe for %s by %s" % (self.name, socket.getpeername()))
           message = ("HTTP/1.1 200 OK\r\n"
                      "SID: uuid:Socket-1_0-%s_sub0000000060\r\n"
                      "TIMEOUT: Second-3100\r\n"
@@ -795,6 +802,7 @@ class fauxmo(upnp_device):
                      "CONNECTION: close\r\n"
                      "\r\n" % self.serial )
           socket.send(message)
+          # socket.close()
           if data.find('CALLBACK') != -1:
             _dbg(0, "New Subscribe for %s" % self.name)
             _dbg(1, data)
@@ -807,6 +815,7 @@ class fauxmo(upnp_device):
             send_event(self)
           else:
             _dbg(0, "Renew-Subscribe for %s to %s" % (self.name, socket.getpeername()))
+          # socket.close()
         elif data.find('SOAPACTION: "urn:Belkin:service:basicevent:1#SetBinaryState"') != -1:
           _dbg(0,"Responding to set binary state from %s:%s" % socket.getpeername())
           success = False
@@ -819,8 +828,8 @@ class fauxmo(upnp_device):
             _dbg(0,"Responding to OFF for %s" % self.name)
             success = self.action_handler.off()
           else:
-            dbg("Unknown Binary State request:")
-            dbg(data)
+            _dbg(0,"Unknown Binary State request:")
+            _dbg(0,data)
           if success:
             # The echo is happy with the 200 status code and doesn't
             # appear to care about the SOAP response body
@@ -842,17 +851,17 @@ class fauxmo(upnp_device):
             update_switch_states()
             send_event(self)
         elif data.find('SOAPACTION: "urn:Belkin:service:basicevent:1#GetBinaryState"') != -1:
-          dbg(1,"Debug: %s" % data)
+          _dbg(0,"Responding to GetBinaryState for %s" % self.name)
+          _dbg(1,"Debug: %s" % data)
           success = False
-          dbg(0,"Responding to GetState for %s from %s" % (self.name,socket.getpeername()))
           update_switch_states()
           _f=0
           i=0
           _st=-1
-          for switch in _switches:
-            if switch[0] == self.name:
+          for _dev in _devices:
+            if _dev[0] == self.name:
               _f=1
-              _st=_switches[int(i)][1]
+              _st=_devices[int(i)][1]
               _dbg(1,"Found tracked state at index %d to be %d" % (i, _st))
               break
             i += 1
@@ -871,8 +880,8 @@ class fauxmo(upnp_device):
                      "%s" % (len(soap), date_str, soap))
           socket.send(message)
         else:
-          dbg("Unknown Call: ")
-          dbg(data)
+          _dbg("Unknown Call: ")
+          _dbg(data)
 
     def on(self):
         return False
@@ -986,9 +995,11 @@ class upnp_broadcast_responder(object):
 # and off command are invoked respectively. It ignores any return data.
 
 class rest_api_handler(object):
-    def __init__(self, on_cmd, off_cmd):
+    def __init__(self, on_cmd, off_cmd, query_cmd = ""):
         self.on_cmd = on_cmd
         self.off_cmd = off_cmd
+        if query_cmd:
+          self.query_cmd = query_cmd
 
     def on(self):
         r = requests.get(self.on_cmd)
@@ -998,11 +1009,37 @@ class rest_api_handler(object):
         r = requests.get(self.off_cmd)
         return r.status_code == 200
 
+    def can_query(self):
+        if hasattr(self, 'query_cmd'):
+          return True
+        return False
+
+    def query(self):
+        try:
+          if self.query_cmd != "":
+            r = requests.get(self.query_cmd)
+            _dbg(1,"Received status from query: \"%s\" content: \"%s\"" % (self.query_cmd, r.content.rstrip()))
+            return r.content.rstrip()
+          else:
+            _dbg(0,"In rest_api_handler - found empty query_cmd on query")
+            return -1
+        except Exception, e:
+          _dbg(0,"In rest_api_handler - query called, but no query_cmd set")
+          return -1
+
+    def len(self):
+      _dbg(0,"In len of rest_api_handler")
+      try:
+        if self.query_cmd != "": return 3
+      except Exception, e:
+        _dbg(0,"Assuming len of 2")
+        _dbg(3,"rest_api_handler.len through error: %s" % e)
+        return 2
 
 # Each entry is a list with the following elements:
 #
 # name of the virtual switch
-# object with 'on' and 'off' methods
+# object with 'on','off' and optional 'query' methods
 # port # (optional; may be omitted)
 
 # NOTE: As of 2015-08-17, the Echo appears to have a hard-coded limit of
@@ -1011,16 +1048,19 @@ class rest_api_handler(object):
 # http://192.168.1.21/ha-api?cmd=off&a=dining
 
 FAUXMOS = [
-    ['kitchen light', rest_api_handler('http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=on&rel=3', 'http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=off&rel=3'),43003,'controllee'],
-    ['dining light', rest_api_handler('http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=on&rel=0', 'http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=off&rel=0'),43004,'controllee'],
-    ['christmas light', rest_api_handler('http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=on&rel=7', 'http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=off&rel=7'),43006,'controllee'],
-    ['lounge light', rest_api_handler('http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=on&rel=2', 'http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=off&rel=2'),43007,'controllee'],
-    ['lightstrip light', rest_api_handler('http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=on&rel=14', 'http://192.168.1.24/cgi-bin/relswitch.cgi?cmd=off&rel=14'),43008,'controllee'],
-    ['hedge sprinkler', rest_api_handler('http://192.168.1.23/cgi-bin/garden.cgi?cmd=on&valve=0', 'http://192.168.1.23/cgi-bin/garden.cgi?cmd=off&valve=0'),43020,'controllee'],
-    ['shed sprinkler', rest_api_handler('http://192.168.1.23/cgi-bin/garden.cgi?cmd=on&valve=1', 'http://192.168.1.23/cgi-bin/garden.cgi?cmd=off&valve=1'),43021,'controllee'],
+    ['kitchen light', rest_api_handler(_lighturlbase + 'cmd=on&rel=3', _lighturlbase + 'cmd=off&rel=3', _lighturlbase + 'cmd=q&rel=3'),43003,'lightswitch'],
+    ['dining light', rest_api_handler(_lighturlbase + 'cmd=on&rel=0', _lighturlbase + 'cmd=off&rel=0', _lighturlbase + 'cmd=q&rel=0'),43004,'lightswitch'],
+    ['christmas light', rest_api_handler(_lighturlbase + 'cmd=on&rel=7', _lighturlbase + 'cmd=off&rel=7', _lighturlbase + 'cmd=q&rel=7'),43006,'lightswitch'],
+    ['lounge light', rest_api_handler(_lighturlbase + 'cmd=on&rel=2', _lighturlbase + 'cmd=off&rel=2', _lighturlbase + 'cmd=q&rel=2'),43007,'lightswitch'],
+    ['lightstrip light', rest_api_handler(_lighturlbase + 'cmd=on&rel=14', _lighturlbase + 'cmd=off&rel=14', _lighturlbase + 'cmd=q&rel=14'),43008,'lightswitch'],
+    ['hedge sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=0', _sprinklerurlbase + 'cmd=off&valve=0', _sprinklerurlbase + 'cmd=query&valve=0'),43020,'controllee'],
+    ['shed sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=1', _sprinklerurlbase + 'cmd=off&valve=1', _sprinklerurlbase + 'cmd=query&valve=1'),43021,'controllee'],
     ['Roomba', rest_api_handler('http://roombot/api?action=clean&value=start', 'http://roombot/api?action=dock&value=home'),43030,'controllee'],
 ]
 
+for _dev in FAUXMOS:
+  _devices.append([_dev[0], 0])
+_dbg(1,"Device list: %s" % _devices)
 
 if len(sys.argv) > 1 and sys.argv[1] == '-d':
     DEBUG = True
@@ -1046,6 +1086,8 @@ for one_faux in FAUXMOS:
     switches.append(switch)
 
 _refresh_subs_time = time.time() + 300
+update_switch_states()
+signal.signal(signal.SIGUSR1, notify_handler)
 
 dbg("Entering main loop\n")
 
