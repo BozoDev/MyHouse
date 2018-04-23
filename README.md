@@ -10,7 +10,7 @@ A collection of scripts and tools I use to manage my smart-home.
  - [Devices](#devices)
  
  ## Servers
-  * [Wemo Emulator](servers/wemos.py)
+  * [Wemo Emulator](#wemo)
   
   
  ## Sensors
@@ -56,4 +56,4 @@ Another example would be Wemos "server" implemented in Python, listening for req
 
  #### Wemo
 
- Quite a while back I stumbled across some python code called 'fauxmo' - simply put, it can expose anything controlable via on/off URL as Wemo device (to e.g. Alexa). Since I also wanted that e.g. homebridge (NodeJS) could pick up the devices, I had to add quite some code. Homebridge also likes to be informed about device changes, so UPnP subscription handling (basic) had to be added. 
+ Quite a while back I stumbled across some python code called '[fauxmo](https://github.com/makermusings/fauxmo)' - simply put, it can expose anything controlable via on/off URL as Wemo device (to e.g. Alexa). Since I also wanted that e.g. homebridge (NodeJS) could pick up the devices, I had to add quite some code. Homebridge also likes to be informed about device changes, so UPnP subscription handling (basic) had to be added. So, the "[Wemo-Emulator](servers/Wemo)" was born.
