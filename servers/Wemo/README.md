@@ -7,10 +7,6 @@ Listen to UPnP-SSDP-Search requests on the network & give similar answers a Wemo
 By 'similar' I mean a reduced functionality - I doubt anybody would like to receive a firmware
 update for the emulator ;)
 
-Being a non-native-python-speaker - so to speak - some of the additions I made will probably make a
-true python coder's hair stand on end - at least I feel that the frequent iterations through lists to
-retrieve attributes/whatevers should be solved more elegantly
-( `"select * from switches where name=$_name"` ...)
 
 The original idea was to enable Amazon&reg;'s Alexa to control something that had an on/off
 (or toggle) URL.
@@ -33,8 +29,11 @@ Since I have more than one Raspi with attached relay-cards, a shell-script MQTT 
 background sending a USR1 singnal to the "Wemo-Emulator" when it receives state changes of relevant devices.
 
 Some hints if you want to use the code:
-- The original Fauxmo code can be considered 'elderly' in IT terms - I used python virtenv to keep nasty surprises
+-  The original Fauxmo code can be considered 'elderly' in IT terms - I used python virtenv to keep nasty surprises
     through python up-dates/-grades to a minimum
-- The code is plastered with debug statements - best pick a few relevant ones and set their level to '0' rather than
+-  The code is plastered with debug statements - best pick a few relevant ones and set their level to '0' rather than
     try to raise the level
-- Aparently Alexa only supports up to 16 Wemo&reg; devices, so don't go overboard ;)
+-  Aparently Alexa only supports up to 16 Wemo&reg; devices, so don't go overboard ;)
+-  Being a non-native-python-speaker - so to speak - some of the additions I made will probably make a true python coder's
+    hair stand on end - at least I feel that the frequent iterations through lists to retrieve attributes/whatevers should
+    be solved more elegantly ( `"select * from switches where name=$_name"` ...)
