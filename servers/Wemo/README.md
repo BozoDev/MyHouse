@@ -10,7 +10,7 @@ update for the emulator ;)
 Being a non-native-python-speaker - so to speak - some of the additions I made will probably make a
 true python coder's hair stand on end - at least I feel that the frequent iterations through lists to
 retrieve attributes/whatevers should be solved more elegantly
-( "select * from switches where name=$_name" ...)
+( 'select * from switches where name=$_name' ...)
 
 The original idea was to enable Amazon&reg;'s Alexa to control something that had an on/off
 (or toggle) URL.
