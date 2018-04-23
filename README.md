@@ -4,11 +4,15 @@ A collection of scripts and tools I use to manage my smart-home.
 
 ## Table of Contents
 
+ - [Servers](#servers)
  - [Sensors](#sensors)
- - [Seriveces](#services)
+ - [Services](#services)
  - [Devices](#devices)
  
- 
+ ## Servers
+  * [Wemo Emulator](servers/wemos.py)
+  
+  
  ## Sensors
  #### Electricity
  * [E-Meter](sensors/emeter)
@@ -48,3 +52,8 @@ Another example would be Wemos "server" implemented in Python, listening for req
  #### Weather
  
  A cheap & simple weather station WS3080 by Velleman, connected to Raspi with [Weewx](http://weewx.com) and added [MQTT-Module](http://lancet.mit.edu/mwall/projects/weather/releases/weewx-mqtt-0.17.tgz). I installed the debian package from the download page, downloaded the mqtt-extension and ran "wee_extension --install weewx-mqtt-0.17.tgz" to have the **sensor** publishing to the mqtt topic "sensors/weather/\*". I also [patched the driver](sensors/weather/) to include the illuminance value.
+
+
+ #### Wemo
+
+ Quite a while back I stumbled across some python code called 'fauxmo' - simply put, it can expose anything controlable via on/off URL as Wemo device (to e.g. Alexa). Since I also wanted that e.g. homebridge (NodeJS) could pick up the devices, I had to add quite some code. Homebridge also likes to be informed about device changes, so UPnP subscription handling (basic) had to be added. 
