@@ -47,6 +47,7 @@ _lighturlbase='http://pi3gate/cgi-bin/relswitch.cgi?'
 _sprinklerurlbase='http://gardenpi/cgi-bin/garden.cgi?'
 _mqtt_broker='pi2gate.localdomain'
 _tmpDir='/run/wemos/'
+_inUpdate=0
 
 def _dbg(lvl, msg):
   global _DEBUG
@@ -56,11 +57,11 @@ def _dbg(lvl, msg):
     sys.stdout.flush()
 
 def save_obj(obj, name ):
-    with open(_tmpDir + name + '.pkl', 'w+') as f:
+    with open( _tmpDir + name + '.pkl', 'w+') as f:
         pickle.dump(obj, f, 0)
 
 def load_obj(name ):
-    with open(_tmpDir + name + '.pkl', 'r') as f:
+    with open( _tmpDir + name + '.pkl', 'r') as f:
         return pickle.load(f)
 
 def update_switch_states():
@@ -117,6 +118,9 @@ def get_cached_switch_state(_name):
 
 def notify_handler(signum, frame):
   _dbg(0,"Signal received - checking for changes and notifying subscribers")
+  if _inUpdate == 1:
+    _dbg(0,"Seem like the In-Update flag is set - skipping")
+    return
   _chgd=[]
   o=0
   for _dev in _devices:
@@ -214,22 +218,6 @@ def send_event(_self):
       _tmpsock.shutdown(socket.SHUT_RDWR)
       _tmpsock.close()
       del(_tmpsock)
-      _dev = _self.name
-      _type = "Unknown"
-      try:
-        _item, _type = _dev.split(" ")
-      except Exception, e:
-        _dbg(1,"Skipping split error")
-        _dbg(2,e)
-        _type = "Other"
-        _item = _self.name
-      _mqtt_topic = ""
-      if _type == "light":
-        _mqtt_topic = 'lights'
-      elif _type == "sprinkler":
-        _mqtt_topic = 'sprinkerls'
-      if _mqtt_topic != "":
-        publish.single("%s/%s/state" % ( _mqtt_topic, _dev ), "%s" % _state, 0, True, "%s" % _mqtt_broker, 1883, "pigate/wemos", 60)
     if subscriptions_e:
       _dbg(0,"Removing subscribers %s" % subscriptions_e)
       remove_subscribers(_self, subscriptions_e)
@@ -732,6 +720,7 @@ class fauxmo(upnp_device):
         return self.name
 
     def handle_request(self, data, sender, socket):
+        global _inUpdate
         _dbg(1,"Handling req. from %s:%s" % (socket.getpeername()))
         _dbg(2,"Received socket data: \"%s\"" % data)
         if data.find('GET /setup.xml HTTP/1.1') == 0:
@@ -811,12 +800,14 @@ class fauxmo(upnp_device):
             _cb, _cbc = _cbt.split()
             _cbc = _cbc[_cbc.find('//')+2:]
             _subs, _subsurl = _cbc.split('/')
+            # ToDo: reset seq to 0/-1
             self.update_subscription( _subs, _subsurl )
             send_event(self)
           else:
             _dbg(0, "Renew-Subscribe for %s to %s" % (self.name, socket.getpeername()))
           # socket.close()
         elif data.find('SOAPACTION: "urn:Belkin:service:basicevent:1#SetBinaryState"') != -1:
+          _inUpdate=1
           _dbg(0,"Responding to set binary state from %s:%s" % socket.getpeername())
           success = False
           if data.find('<BinaryState>1</BinaryState>') != -1:
@@ -835,6 +826,7 @@ class fauxmo(upnp_device):
             # appear to care about the SOAP response body
             # soap = ""
             # But, FWIW, we'll stick to protocol ;) :
+            _dbg(0,"SetBinaryState was successful, so let's send a response")
             soap = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><s:Body><u:SetBinaryStateResponse xmlns:u=\"urn:Belkin:service:basicevent:1\"><CountdownEndTime>0</CountdownEndTime></u:SetBinaryStateResponse></s:Body> </s:Envelope>"
             date_str = email.utils.formatdate(timeval=None, localtime=False, usegmt=True)
             message = ("HTTP/1.1 200 OK\r\n"
@@ -850,6 +842,29 @@ class fauxmo(upnp_device):
             socket.send(message)
             update_switch_states()
             send_event(self)
+            ## This *SHOULD* now be done by the agents that change the device state
+            ##  would create a loop otherwise...
+            ##  ok, had a loop anyhow, so fixed below with '_inUpdate' flag...
+            # _dev = self.name
+            # _type = "Unknown"
+            # try:
+            #   _item, _type = _dev.split(" ")
+            # except Exception, e:
+            #   _dbg(1,"Skipping split error")
+            #   _dbg(2,e)
+            #   _type = "Other"
+            #   _item = _self.name
+            # _mqtt_topic = ""
+            # if _type == "light":
+            #   _mqtt_topic = 'lights'
+            # elif _type == "sprinkler":
+            #   _mqtt_topic = 'sprinklers'
+            # if _mqtt_topic != "":
+            #   _state = get_cached_switch_state(self.name)
+            #   publish.single("%s/%s/state" % ( _mqtt_topic, _dev ), "%s" % _state, 0, True, "%s" % _mqtt_broker, 1883, "pigate/wemos", 60)
+          else:
+            _dbg(0,"SetBinaryState failed - no answer sent...")
+          _inUpdate = 0
         elif data.find('SOAPACTION: "urn:Belkin:service:basicevent:1#GetBinaryState"') != -1:
           _dbg(0,"Responding to GetBinaryState for %s" % self.name)
           _dbg(1,"Debug: %s" % data)
