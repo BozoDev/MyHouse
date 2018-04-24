@@ -42,7 +42,7 @@ import pickle
 _DEBUG = 1
 
 FAUSMOS = []
-_devices = []
+# _devices = []
 _lighturlbase='http://pi3gate/cgi-bin/relswitch.cgi?'
 _sprinklerurlbase='http://gardenpi/cgi-bin/garden.cgi?'
 _mqtt_broker='pi2gate.localdomain'
@@ -65,15 +65,14 @@ def load_obj(name ):
         return pickle.load(f)
 
 def update_switches_state():
-  # Assume _devices[x] == FAUXMOS[x], since _devices is created by iterating over FAUXMOS
-  global _devices
+  global switches
   _dbg(0,"In update_switches_state")
   i=0
-  for _device in _devices:
-    if FAUXMOS[i][1].can_query():
-      _dbg(0,"In update_switches_state device %s had state %s and will grab state from FAUXMOS %s" % (_devices[i][0], _devices[i][1], FAUXMOS[i][0]))
-      _devices[i][1] = FAUXMOS[i][1].query()
-      _dbg(0,"In update_switches_state device %s now has state %s" % ( _devices[i][0], _devices[i][1]))
+  for switch in switches:
+    if switch.action_handler.can_query():
+      _dbg(0,"In update_switches_state device %s had state %s" % (switch.name, switch.state))
+      switches[i].state = switch.action_handler.query()
+      _dbg(0,"In update_switches_state device %s now has state %s" % ( switches[i].name, switches[i].state))
     i += 1
   return
 
@@ -98,51 +97,33 @@ def get_switch_state(_name):
   _dbg(0,"Unknow switch %s requsted for get_switch_state" % _name)
   return -1
 
-def get_cached_switch_state(_name):
-  _dbg(1,"In get_cached_device_states")
-  for _dev in _devices:
-    try:
-      _sw, _l = _dev[0].split(" ")
-    except Exception, e:
-      _sw = _dev[0]
-      _l = "switch"
-    if _dev[0] == _name or _sw == _name:
-      _dbg(1,"Found %s in get_cached_switch_state" % _name)
-      return _dev[1]
-  _dbg(0,"Unknow switch %s requsted for get_cached_switch_state" % _name)
-  return -1
-
 def notify_handler(signum, frame):
+  global switches
   _dbg(0,"Signal received - checking for changes and notifying subscribers")
   if _inUpdate == 1:
     _dbg(0,"Seem like the In-Update flag is set - skipping")
     return
   _chgd=[]
-  o=0
-  for _dev in _devices:
-    _state = get_switch_state(_dev[0])
-    if _state == -1:
-      o += 1
-      continue
-    _state_o = get_cached_switch_state(_dev[0])
-    if _state_o != _state:
-      _dbg(0,"Switch %s changed from %s to %s" % (_devices[o][0], _state_o, _state))
-      i=0
-      for _sw in switches:
-        _dbg(2,"Checking %s aginst %s" % (_sw.name, _dev[0]))
-        if _sw.name == _dev[0]:
-          _dbg(0,"Adding #%s to changed list" % i)
-          _chgd.append(i)
-          break
-        i += 1
-    o += 1
-  # _fh.close()
-  update_switches_state()
-  _dbg(1,"Notifying these: %s" % _chgd)
+  i=0
+  for switch in switches:
+    if switch.action_handler.can_query():
+      _dbg(0,"In notify_handler switch %s can query" % switch.name)
+      _state_o = str(switch.state)
+      _state = str(switch.action_handler.query())
+      if _state != _state_o:
+        _dbg(0,"In notify_handler new switch state detected for %s old: %s new: %s" % (switch.name, _state_o, _state))
+        # Ugly: ToDo: create set_state method in fauxmos class
+        switches[i].state = _state
+        _chgd.append(i)
+      else:
+        _dbg(0,"In notify_handler no change detected for %s" % switch.name)
+    else:
+       _dbg(0,"In notify_handler can't query switch %s" % switch.get_name())
+    i += 1
+  _dbg(0,"Notifying these: %s" % _chgd)
   for _chg in _chgd:
     _dbg(0,"Will send notify to: %s" % switches[_chg].name )
     switches[_chg].notify_subscribers()
-    _dbg(2,"Notified: %s" % _chg)
 
 def remove_subscribers(_self, subs):
   _dbg(0,"Entering remove_subscribers")
@@ -178,7 +159,9 @@ def send_event(_self):
       subsurl = subscr['url']
       _dbg(0,"Subscriber: %s:%s on URL: %s" % (ip,port,subsurl))
       destination = (ip, int(port))
-      _state = get_switch_state(_self.name)
+      # _state = get_switch_state(_self.name) # <- this was old, but it actually queried the controlled device for its state, rather than just read-out the supposed state
+      _state = _self.state
+      _dbg(0,"In send_event try getting cached switch state as %s" % _self.state)
       xml = ("<?xml version=\"1.0\"?>"
              "<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">"
              "<e:property>"
@@ -849,26 +832,6 @@ class fauxmo(upnp_device):
             socket.send(message)
             # update_switches_state()
             send_event(self)
-            ## This *SHOULD* now be done by the agents that change the device state
-            ##  would create a loop otherwise...
-            ##  ok, had a loop anyhow, so fixed below with '_inUpdate' flag...
-            # _dev = self.name
-            # _type = "Unknown"
-            # try:
-            #   _item, _type = _dev.split(" ")
-            # except Exception, e:
-            #   _dbg(1,"Skipping split error")
-            #   _dbg(2,e)
-            #   _type = "Other"
-            #   _item = _self.name
-            # _mqtt_topic = ""
-            # if _type == "light":
-            #   _mqtt_topic = 'lights'
-            # elif _type == "sprinkler":
-            #   _mqtt_topic = 'sprinklers'
-            # if _mqtt_topic != "":
-            #   _state = get_cached_switch_state(self.name)
-            #   publish.single("%s/%s/state" % ( _mqtt_topic, _dev ), "%s" % _state, 0, True, "%s" % _mqtt_broker, 1883, "pigate/wemos", 60)
           else:
             _dbg(0,"SetBinaryState failed - no answer sent...")
           _inUpdate = 0
@@ -877,18 +840,18 @@ class fauxmo(upnp_device):
           _dbg(1,"Debug: %s" % data)
           success = False
           update_switches_state()
-          _f=0
-          i=0
-          _st=-1
-          for _dev in _devices:
-            if _dev[0] == self.name:
-              _f=1
-              _st=_devices[int(i)][1]
-              _dbg(1,"Found tracked state at index %d to be %d" % (i, _st))
-              break
-            i += 1
-          _dbg(0,"Found tracked state at index %d to be %d" % (i, _st))
-          soap = "<?xml version=\"1.0\" encoding=\"utf-8\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><s:Body><u:GetBinaryState xmlns:u=\"urn:Belkin:service:basicevent:1\"><BinaryState>%d</BinaryState></u:GetBinaryState></s:Body></s:Envelope>" % _st
+          # _f=0
+          # i=0
+          # _st=-1
+          # for _dev in _devices:
+          #   if _dev[0] == self.name:
+          #     _f=1
+          #     _st=_devices[int(i)][1]
+          #     _dbg(1,"Found tracked state at index %d to be %d" % (i, _st))
+          #     break
+          #   i += 1
+          # _dbg(0,"Found tracked state at index %d to be %d" % (i, _st))
+          soap = "<?xml version=\"1.0\" encoding=\"utf-8\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><s:Body><u:GetBinaryState xmlns:u=\"urn:Belkin:service:basicevent:1\"><BinaryState>%d</BinaryState></u:GetBinaryState></s:Body></s:Envelope>" % self.state
           date_str = email.utils.formatdate(timeval=None, localtime=False, usegmt=True)
           message = ("HTTP/1.1 200 OK\r\n"
                      "CONTENT-LENGTH: %d\r\n"
@@ -1081,9 +1044,9 @@ FAUXMOS = [
     ['Roomba', rest_api_handler('http://roombot/api?action=clean&value=start', 'http://roombot/api?action=dock&value=home'),0],
 ]
 
-for _dev in FAUXMOS:
-  _devices.append([_dev[0], 0])
-_dbg(1,"Device list: %s" % _devices)
+# for _dev in FAUXMOS:
+#   _devices.append([_dev[0], 0])
+# _dbg(1,"Device list: %s" % _devices)
 
 if len(sys.argv) > 1 and sys.argv[1] == '-d':
     DEBUG = True
