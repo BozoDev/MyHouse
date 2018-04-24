@@ -37,7 +37,7 @@ import urllib
 import uuid
 import signal
 import pickle
-import paho.mqtt.publish as publish
+# import paho.mqtt.publish as publish
 
 _DEBUG = 1
 
@@ -64,20 +64,16 @@ def load_obj(name ):
     with open( _tmpDir + name + '.pkl', 'r') as f:
         return pickle.load(f)
 
-def update_switch_states():
+def update_switches_state():
+  # Assume _devices[x] == FAUXMOS[x], since _devices is created by iterating over FAUXMOS
   global _devices
-  _dbg(0,"In update_switch_states")
+  _dbg(0,"In update_switches_state")
   i=0
   for _device in _devices:
-    for _d in FAUXMOS:
-      if _d[0] == _device[0]:
-        if _d[1].can_query():
-          _dbg(2,"In nu update_switch_states updating state of %s from %s" % ( _d[0], _device[1] ))
-          _devices[i][1] = _d[1].query()
-          _dbg(0,"state of %s is now %s" % (_d[0], _devices[i][1]))
-        else:
-          _dbg(0,"Device %s can't query" % _d[0])
-        break
+    if FAUXMOS[i][1].can_query():
+      _dbg(0,"In update_switches_state device %s had state %s and will grab state from FAUXMOS %s" % (_devices[i][0], _devices[i][1], FAUXMOS[i][0]))
+      _devices[i][1] = FAUXMOS[i][1].query()
+      _dbg(0,"In update_switches_state device %s now has state %s" % ( _devices[i][0], _devices[i][1]))
     i += 1
   return
 
@@ -141,7 +137,7 @@ def notify_handler(signum, frame):
         i += 1
     o += 1
   # _fh.close()
-  update_switch_states()
+  update_switches_state()
   _dbg(1,"Notifying these: %s" % _chgd)
   for _chg in _chgd:
     _dbg(0,"Will send notify to: %s" % switches[_chg].name )
@@ -168,8 +164,8 @@ def send_event(_self):
     _dbg(0,"Entering re-written send_event")
     _host = "%s:%s" % ( _self.ip_address, _self.port )
     _filen = _self.subsfile
-    _self._seq += 1
-    seq = _self._seq
+    seq = _self.seq
+    _self.seq += 1
     subscriptions = []
     subscriptions_e = []
     subscriptions = load_obj(_filen)
@@ -616,7 +612,6 @@ class upnp_device(object):
 # This subclass does the bulk of the work to mimic a WeMo switch on the network.
 
 class fauxmo(upnp_device):
-    _seq=-1
     @staticmethod
     def make_uuid(name):
         return ''.join(["%x" % sum([ord(c) for c in name])] + ["%x" % ord(c) for c in "%sfauxmo!" % name])[:14]
@@ -675,7 +670,7 @@ class fauxmo(upnp_device):
         port = subscript['port']
         subsurl = subscript['url']
         destination = (ip, int(port))
-        _state = get_switch_state(_self.name)
+        _state = _self.state
         message = ("HTTP/1.1 200 OK\r\n"
                    "SID: uuid:Socket-1_0-%s_sub0000000060\r\n"
                    "TIMEOUT: Second-3100\r\n"
@@ -705,6 +700,8 @@ class fauxmo(upnp_device):
         self.ip_address = ip_address
         self.dev_type = dev_type
         self.subsfile = "sub_l_%s" % name.replace(' ', '_')
+        self.seq = 0
+        self.state = 0
         persistent_uuid = "Socket-1_0-" + self.serial
         _fh = open(_tmpDir + self.subsfile + ".pkl", "a")
         _fh.close
@@ -801,6 +798,8 @@ class fauxmo(upnp_device):
             _cbc = _cbc[_cbc.find('//')+2:]
             _subs, _subsurl = _cbc.split('/')
             # ToDo: reset seq to 0/-1
+            #   This is ugly - I have a hunch that seq should be per subscriber and not per device
+            self.seq = 0
             self.update_subscription( _subs, _subsurl )
             send_event(self)
           else:
@@ -814,10 +813,18 @@ class fauxmo(upnp_device):
             # on
             _dbg(0,"Responding to ON for %s" % self.name)
             success = self.action_handler.on()
+            if success:
+              self.state = 1
+            else:
+              _dbg(0,"Couldn't set device ON")
           elif data.find('<BinaryState>0</BinaryState>') != -1:
             # off
             _dbg(0,"Responding to OFF for %s" % self.name)
             success = self.action_handler.off()
+            if success:
+              self.state = 0
+            else:
+              _dbg(0,"Couldn't set device OFF")
           else:
             _dbg(0,"Unknown Binary State request:")
             _dbg(0,data)
@@ -840,7 +847,7 @@ class fauxmo(upnp_device):
                        "\r\n"
                        "%s" % (len(soap), date_str, soap))
             socket.send(message)
-            update_switch_states()
+            # update_switches_state()
             send_event(self)
             ## This *SHOULD* now be done by the agents that change the device state
             ##  would create a loop otherwise...
@@ -869,7 +876,7 @@ class fauxmo(upnp_device):
           _dbg(0,"Responding to GetBinaryState for %s" % self.name)
           _dbg(1,"Debug: %s" % data)
           success = False
-          update_switch_states()
+          update_switches_state()
           _f=0
           i=0
           _st=-1
@@ -1055,7 +1062,8 @@ class rest_api_handler(object):
 #
 # name of the virtual switch
 # object with 'on','off' and optional 'query' methods
-# port # (optional; may be omitted)
+# port # (set to 0 to use a dynamic port)
+# device-type (optional - will be set to 'controllee' if not set)
 
 # NOTE: As of 2015-08-17, the Echo appears to have a hard-coded limit of
 # 16 switches it can control. Only the first 16 elements of the FAUXMOS
@@ -1070,7 +1078,7 @@ FAUXMOS = [
     ['lightstrip light', rest_api_handler(_lighturlbase + 'cmd=on&rel=14', _lighturlbase + 'cmd=off&rel=14', _lighturlbase + 'cmd=q&rel=14'),43008,'lightswitch'],
     ['hedge sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=0', _sprinklerurlbase + 'cmd=off&valve=0', _sprinklerurlbase + 'cmd=query&valve=0'),43020,'controllee'],
     ['shed sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=1', _sprinklerurlbase + 'cmd=off&valve=1', _sprinklerurlbase + 'cmd=query&valve=1'),43021,'controllee'],
-    ['Roomba', rest_api_handler('http://roombot/api?action=clean&value=start', 'http://roombot/api?action=dock&value=home'),43030,'controllee'],
+    ['Roomba', rest_api_handler('http://roombot/api?action=clean&value=start', 'http://roombot/api?action=dock&value=home'),0],
 ]
 
 for _dev in FAUXMOS:
@@ -1094,14 +1102,14 @@ switches=[]
 
 # Create our FauxMo virtual switch devices
 for one_faux in FAUXMOS:
-    if len(one_faux) == 2:
-        # a fixed port wasn't specified, use a dynamic one
-        one_faux.append(0)
+    if len(one_faux) == 3:
+        # a device-type wasn't specified, use 'controllee'
+        one_faux.append('controllee')
     switch = fauxmo(one_faux[0], u, p, None, one_faux[2], action_handler = one_faux[1], dev_type = one_faux[3])
     switches.append(switch)
 
 _refresh_subs_time = time.time() + 300
-update_switch_states()
+update_switches_state()
 signal.signal(signal.SIGUSR1, notify_handler)
 
 dbg("Entering main loop\n")
