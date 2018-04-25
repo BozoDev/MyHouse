@@ -56,11 +56,11 @@ def _dbg(lvl, msg):
     sys.stdout.flush()
 
 def save_obj(obj, name ):
-    with open( _tmpDir + name + '.pkl', 'w+') as f:
+    with open( _tmpDir + name, 'w+') as f:
         pickle.dump(obj, f, 0)
 
 def load_obj(name ):
-    with open( _tmpDir + name + '.pkl', 'r') as f:
+    with open( _tmpDir + name, 'r') as f:
         return pickle.load(f)
 
 def update_switches_state():
@@ -670,11 +670,11 @@ class fauxmo(upnp_device):
         self.name = name
         self.ip_address = ip_address
         self.dev_type = dev_type
-        self.subsfile = "sub_l_%s" % name.replace(' ', '_')
+        self.subsfile = "sub_%s.pkl" % name.replace(' ', '_')
         self.seq = 0
         self.state = 0
         persistent_uuid = "Socket-1_0-" + self.serial
-        _fh = open(_tmpDir + self.subsfile + ".pkl", "a")
+        _fh = open(_tmpDir + self.subsfile, "a")
         _fh.close
         other_headers = ['X-User-Agent: redsonic']
         upnp_device.__init__(self, listener, poller, port, "http://%(ip_address)s:%(port)s/setup.xml", "Unspecified, UPnP/1.0, Unspecified", persistent_uuid, other_headers=other_headers, ip_address=ip_address)
