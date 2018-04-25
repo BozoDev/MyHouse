@@ -1,0 +1,17 @@
+/var/log/wemos.log {
+        daily
+        missingok
+        rotate 32
+        compress
+        delaycompress
+        notifempty
+        create 640 wemos adm
+        sharedscripts
+        postrotate
+		sleep 180 && \
+                /etc/init.d/wemos start > /dev/null
+        endscript
+        prerotate
+                /etc/init.d/wemos stop > /dev/null
+        endscript
+}
