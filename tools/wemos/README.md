@@ -23,6 +23,8 @@ sudo su
 cd ~wemos/MyHouse
 cp tools/wemos/etc/init.d/wemos /etc/init.d/
 chown root /etc/init.d/wemos
+cp tools/wemos/etc/logrotate.d/wemos /etc/logrotate.d/
+chown root /etc/logrotate.d/wemos
 mkdir -p /usr/local/bin
 cp servers/Wemo/wemos.py /usr/local/bin/
 chown root /usr/local/bin/wemos.py
@@ -38,3 +40,4 @@ Edit `/usr/local/bin/wemos.py`:
 
 The `~wemos/lib/switches.sh` is used by the MQTT-listener to only send SIG-USR1 to wemos.py on changes it wants to know about. I want to know about some lights and all sprinklers - adjust according to your needs.
 
+The included `/etc/logrotate.d/wemos` is to keep the log-files from overflowing - adjust to your needs (amount, compression,...)
