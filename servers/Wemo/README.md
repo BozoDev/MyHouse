@@ -39,4 +39,4 @@ Some hints if you want to use the code:
     be solved more elegantly ( `"select * from switches where name=$_name"` ...)
 
 
-*__Installation instructions__ can be found in the [tools/wemos](/BozoDev/MyHouse/tools/wemos/) directory, along with some helper files like `/etc/init.d/wemos` script...*
+*__Installation instructions__ can be found in the [tools/wemos](/tools/wemos/) directory, along with some helper files like `/etc/init.d/wemos` script...*
