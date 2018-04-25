@@ -228,7 +228,7 @@ SETUP_XML = """<?xml version="1.0"?>
     <binaryState>0</binaryState>
     <UDN>uuid:Socket-1_0-%(device_serial)s</UDN>
     <UPC>123456789</UPC>
-    <macAddress>%(_mac_address)</macAddress>
+    <macAddress>%(_mac_address)s</macAddress>
     <firmwareVersion>WeMo_WW_2.00.8095.PVT-OWRT-SNS</firmwareVersion>
     <iconVersion>1|49153</iconVersion>
     <iconList>
