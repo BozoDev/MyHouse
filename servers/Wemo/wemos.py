@@ -228,7 +228,7 @@ SETUP_XML = """<?xml version="1.0"?>
     <binaryState>0</binaryState>
     <UDN>uuid:Socket-1_0-%(device_serial)s</UDN>
     <UPC>123456789</UPC>
-    <macAddress>%(_mac_address)s</macAddress>
+    <macAddress>%(mac_address)s</macAddress>
     <firmwareVersion>WeMo_WW_2.00.8095.PVT-OWRT-SNS</firmwareVersion>
     <iconVersion>1|49153</iconVersion>
     <iconList>
@@ -695,7 +695,7 @@ class fauxmo(upnp_device):
         _dbg(2,"Received socket data: \"%s\"" % data)
         if data.find('GET /setup.xml HTTP/1.1') == 0:
             _dbg(0, "Responding to setup.xml for %s" % self.name)
-            xml = SETUP_XML % {'device_type' : self.dev_type, 'device_name' : self.name, 'device_port' : self.port, 'device_serial' : self.serial}
+            xml = SETUP_XML % {'device_type' : self.dev_type, 'device_name' : self.name, 'device_port' : self.port, 'device_serial' : self.serial, 'mac_address' : _mac_address}
             date_str = email.utils.formatdate(timeval=None, localtime=False, usegmt=True)
             message = ("HTTP/1.1 200 OK\r\n"
                        "CONTENT-LENGTH: %d\r\n"
