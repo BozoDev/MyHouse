@@ -46,6 +46,8 @@ FAUSMOS = []
 _lighturlbase='http://pi3gate/cgi-bin/relswitch.cgi?'
 _sprinklerurlbase='http://gardenpi/cgi-bin/garden.cgi?'
 # _mqtt_broker='pi2gate.localdomain'
+# Used in setup.xml:
+_mac_address='b827ebd2f303'
 _tmpDir='/run/wemos/'
 _inUpdate=0
 
@@ -226,7 +228,7 @@ SETUP_XML = """<?xml version="1.0"?>
     <binaryState>0</binaryState>
     <UDN>uuid:Socket-1_0-%(device_serial)s</UDN>
     <UPC>123456789</UPC>
-    <macAddress>b827ebd2f303</macAddress>
+    <macAddress>%(_mac_address)</macAddress>
     <firmwareVersion>WeMo_WW_2.00.8095.PVT-OWRT-SNS</firmwareVersion>
     <iconVersion>1|49153</iconVersion>
     <iconList>
