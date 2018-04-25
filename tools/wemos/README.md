@@ -31,7 +31,8 @@ chown root /usr/local/bin/wemos.py
 ```
 
 Edit `/usr/local/bin/wemos.py`:
--  towards the top of the file you'll see `_lighturlbase`, which can be used to make the list of FAUXMOS more readable if you have several devices that have the same base-URL - same goes for `_sprinklerurlbase`.
+-  towards the top of the file you'll see `_lighturlbase`, which can be used to make the list of FAUXMOS more readable if you have several devices that have the same base-URL - same goes for `_sprinklerurlbase`
+-  `_mac_address` - used in setup.xml as reply to SSDP-Search requests - has no ':' or '-' - haven't seen a client that cares if it's the real NIC address or uses it to distinguish different devices...
 -  change the list of FAUXMOS at the bottom to the devices you'd like to expose
     *  their name (first field) will be the name Alexa uses in command like 'Alexa, turn on kitchen light'
     *  their control URL, first is on, second off and the third (optional) is to query the device for its current state (the latter doesn't matter to Alexa, but other like homebridge do like to be notified on changes)
