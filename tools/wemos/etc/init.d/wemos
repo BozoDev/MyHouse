@@ -32,23 +32,6 @@ then
   chgrp wemos /run/wemos
   chmod g+s /run/wemos
   chmod g+w /run/wemos
-  [ -f /var/lib/wemos/lib/switches.sh ] && . /var/lib/wemos/lib/switches.sh || exit 1
-  for i in ${switches[0]}
-  do
-    touch /run/wemos/sub_${i}_light.txt
-  done
-  for i in hedge shed garage terrace ship
-  do
-    touch /run/wemos/sub_${i}_sprinkler.txt
-  done
-  touch /run/wemos/sub_Roomba.txt
-  chown wemos /run/wemos/sub_*
-fi
-
-if [ ! -f /run/wemos/rel_state.txt ]
-then
-  touch /run/wemos/rel_state.txt
-  chmod 0666 /run/wemos/rel_state.txt
 fi
 
 case "${1}" in
