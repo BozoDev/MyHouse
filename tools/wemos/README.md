@@ -34,7 +34,7 @@ Edit `/usr/local/bin/wemos.py`:
     *  their name (first field) will be the name Alexa uses in command like 'Alexa, turn on kitchen light'
     *  their control URL, first is on, second off and the third (optional) is to query the device for its current state (the latter doesn't matter to Alexa, but other like homebridge do like to be notified on changes)
     *  their type - optional - currently `controllee` is a simple on/off socket and default is omitted. I'm still trying to figure out additional types and their benefit - was hoping for a `dim`...
--  check the remaining variables at the top for anything you may want to alter, but remember that e.g. tmpdir would also need to be adjusted in `/etc/init.s/wemos`
+-  check the remaining variables at the top for anything you may want to alter, but remember that e.g. tmpdir would also need to be adjusted in `/etc/init.d/wemos`
 
 The `~wemos/lib/switches.sh` is used by the MQTT-listener to only send SIG-USR1 to wemos.py on changes it wants to know about. I want to know about some lights and all sprinklers - adjust according to your needs.
 
