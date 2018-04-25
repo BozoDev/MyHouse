@@ -25,7 +25,7 @@ So, here we are now - the "Wemo-Emulator" can now keep track of subscribers (wel
 remove subscriber on send-error,...), notify them of changes, query devices for their state (like someone uses
 that Web-GUI on my raspi to 'manually' toggle a relay/light or a cronjob decides to water the garden...).
 
-Since I have more than one Raspi with attached relay-cards, a shell-script MQTT listener runs in the
+Since I have more than one Raspi with attached relay-cards, a shell-script [MQTT listener](/tools/wemos/var/lib/wemos/bin) runs in the
 background sending a USR1 singnal to the "Wemo-Emulator" when it receives state changes of relevant devices.
 
 Some hints if you want to use the code:
