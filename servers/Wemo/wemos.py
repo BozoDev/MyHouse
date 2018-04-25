@@ -1064,7 +1064,7 @@ _refresh_subs_time = time.time() + 300
 update_switches_state()
 signal.signal(signal.SIGUSR1, notify_handler)
 
-dbg("Entering main loop\n")
+_dbg(0,"Entering main loop\n")
 
 while True:
     try:
