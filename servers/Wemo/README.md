@@ -37,3 +37,6 @@ Some hints if you want to use the code:
 -  Being a non-native-python-speaker - so to speak - some of the additions I made will probably make a true python coder's
     hair stand on end - at least I feel that the frequent iterations through lists to retrieve attributes/whatevers should
     be solved more elegantly ( `"select * from switches where name=$_name"` ...)
+
+
+*__Installation instructions__ can be found in the [tools/wemos](/BozoDev/MyHouse/tools/wemos/) directory, along with some helper files like `/etc/init.d/wemos` script...*
