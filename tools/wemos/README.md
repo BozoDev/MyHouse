@@ -13,15 +13,15 @@ cd Python
 pip install paho_mqtt
 # pip install any missing stuff here
 deactivate
-mkdir bin lib tmp
+mkdir bin lib
 git clone "https://github.com/BozoDev/MyHouse"
 cd MyHouse
-cp tools/wemos/var/lib/wemos/lib/switches.sh ../../lib/
-cp tools/wemos/var/lib/wemos/bin/mqtt_wemos_state.sh ../../bin
+cp tools/wemos/var/lib/wemos/lib/switches.sh ../lib/
+cp tools/wemos/var/lib/wemos/bin/mqtt_wemos_state.sh ../bin/
 exit
 sudo su
 cd ~wemos/MyHouse
-cp tools/wemos/etc/init.d/wemos /etc/init.d
+cp tools/wemos/etc/init.d/wemos /etc/init.d/
 chown root /etc/init.d/wemos
 mkdir -p /usr/local/bin
 cp servers/Wemo/wemos.py /usr/local/bin/
