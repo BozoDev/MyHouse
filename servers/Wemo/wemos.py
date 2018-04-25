@@ -591,15 +591,14 @@ class fauxmo(upnp_device):
 
     def update_subscription( _self, subs, subsurl):
         _dbg(0,"Entering update_subscription")
-        _filename = _tmpDir + "sub_%s.txt" % _self.name.replace(' ', '_')
-        _filename_l = _self.subsfile
+        _filename = _self.subsfile
         _nusubs = []
         _host, _port = subs.split(":")
         _nusubs[:] = []
         f = 0
         _subsr = []
         try:
-          _subsr = load_obj(_filename_l)
+          _subsr = load_obj(_filename)
           _dbg(1,"Read subscriber file")
         except:
           _dbg(0,"Couldn't read subscriptions from file (empty?)")
@@ -628,7 +627,7 @@ class fauxmo(upnp_device):
         if f != 1:
           # I think this happens on empty file... no for, no if..else hence file stays empty
           _nusubs.append({'ip': _host, 'port': _port, 'url': subsurl})
-        save_obj(_nusubs, _filename_l)
+        save_obj(_nusubs, _filename)
         return
 
     def notify_subscribers(_self):
