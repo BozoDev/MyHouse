@@ -107,7 +107,7 @@ def notify_handler(signum, frame):
   i=0
   for switch in switches:
     if switch.action_handler.can_query():
-      _dbg(0,"In notify_handler switch %s can query" % switch.name)
+      _dbg(1,"In notify_handler switch %s can query" % switch.name)
       _state_o = str(switch.state)
       _state = str(switch.action_handler.query())
       if _state != _state_o:
@@ -116,9 +116,9 @@ def notify_handler(signum, frame):
         switches[i].state = _state
         _chgd.append(i)
       else:
-        _dbg(0,"In notify_handler no change detected for %s" % switch.name)
+        _dbg(1,"In notify_handler no change detected for %s" % switch.name)
     else:
-       _dbg(0,"In notify_handler can't query switch %s" % switch.get_name())
+       _dbg(1,"In notify_handler can't query switch %s" % switch.get_name())
     i += 1
   _dbg(0,"Notifying these: %s" % _chgd)
   for _chg in _chgd:
