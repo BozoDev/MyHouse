@@ -45,12 +45,11 @@ FAUSMOS = []
 # _devices = []
 _lighturlbase='http://pi3gate/cgi-bin/relswitch.cgi?'
 _sprinklerurlbase='http://gardenpi/cgi-bin/garden.cgi?'
-_mqtt_broker='pi2gate.localdomain'
+# _mqtt_broker='pi2gate.localdomain'
 _tmpDir='/run/wemos/'
 _inUpdate=0
 
 def _dbg(lvl, msg):
-  global _DEBUG
   if lvl < _DEBUG:
     date_str = time.strftime("%Y-%m-%d %H:%M-%S")
     print "DEBUG %s: %s" % (date_str, msg)
@@ -187,12 +186,12 @@ def send_event(_self):
         _tmpsock.send(message)
       except Exception, e:
         if int(e[0]) == 111:
-          _dbg(0,"Skipping Error %s" % e[1])
+          _dbg(0,"Skipping Error %s - removing subscriber" % e[1])
           subscriptions_e.append(subscr)
           continue
         else:
-          dbg("Failed to send Notify with: ")
-          dbg(e)
+          _dbg(0,"Failed to send Notify with: %s" % e)
+          _dbg(0,"removing subscriber...")
           subscriptions_e.append(subscr)
       _tmpsock.shutdown(socket.SHUT_RDWR)
       _tmpsock.close()
@@ -443,15 +442,6 @@ EVENTSERVICE_XML = """<?xml version="1.0"?>
 </scpd>
 """
 
-DEBUG = True
-
-def dbg(msg):
-  global DEBUG
-  if DEBUG:
-    date_str = email.utils.formatdate(timeval=None, localtime=True, usegmt=False)
-    print "DEBUG %s: %s" % (date_str, msg)
-    sys.stdout.flush()
-
 # A simple utility class to wait for incoming data to be
 # ready on a socket.
 
@@ -671,8 +661,7 @@ class fauxmo(upnp_device):
           if int(e[0]) == 111:
             _dbg(0,"Skipping Error %s" % e[1])
           else:
-            dbg("Failed to send Notify with: ")
-            dbg(e)
+            _dbg(0,"Failed to send Notify with: %s" % e)
         _tmpsock.shutdown(socket.SHUT_RDWR)
         _tmpsock.close()
         del(_tmpsock)
@@ -694,7 +683,7 @@ class fauxmo(upnp_device):
             self.action_handler = action_handler
         else:
             self.action_handler = self
-        dbg("FauxMo device '%s' ready on %s:%s" % (self.name, self.ip_address, self.port))
+        _dbg(0,"FauxMo device '%s' ready on %s:%s" % (self.name, self.ip_address, self.port))
 
     def get_name(self):
         return self.name
@@ -904,20 +893,20 @@ class upnp_broadcast_responder(object):
             try:
                 self.ssock.bind(('',self.port))
             except Exception, e:
-                dbg("WARNING: Failed to bind %s:%d: %s" , (self.ip,self.port,e))
+                _dbg(0,"WARNING: Failed to bind %s:%d: %s" , (self.ip,self.port,e))
                 ok = False
 
             try:
                 self.ssock.setsockopt(socket.IPPROTO_IP,socket.IP_ADD_MEMBERSHIP,self.mreq)
             except Exception, e:
-                dbg('WARNING: Failed to join multicast group:',e)
+                _dbg(0,"WARNING: Failed to join multicast group: %s" % e)
                 ok = False
 
         except Exception, e:
-            dbg("Failed to initialize UPnP sockets:",e)
+            _dbg(0,"Failed to initialize UPnP sockets: %s" % e)
             return False
         if ok:
-            dbg("Listening for UPnP broadcasts")
+            _dbg(0,"Listening for UPnP broadcasts")
 
     def fileno(self):
         return self.ssock.fileno()
@@ -964,12 +953,12 @@ class upnp_broadcast_responder(object):
             else:
                 return False, False
         except Exception, e:
-            dbg(e)
+            _dbg("In recvfrom socket not ready : %s" % e)
             return False, False
 
     def add_device(self, device):
         self.devices.append(device)
-        dbg("UPnP broadcast listener: new device registered")
+        _dbg(0, "UPnP broadcast listener: new device registered")
 
 
 # This is an example handler class. The fauxmo class expects handlers to be
@@ -1049,7 +1038,7 @@ FAUXMOS = [
 # _dbg(1,"Device list: %s" % _devices)
 
 if len(sys.argv) > 1 and sys.argv[1] == '-d':
-    DEBUG = True
+    _DEBUG = 1
 
 # Set up our singleton for polling the sockets for data ready
 p = poller()
