@@ -2,6 +2,8 @@ About the Wemo-Emulator
 
 First things first: big thanks to [Maker Musings](http://www.makermusings.com/2015/07/13/amazon-echo-and-home-automation/) for the original "[Fauxmo](https://github.com/makermusings/fauxmo)" Python code.
 
+*__Installation instructions__ can be found in the [tools/wemos](/tools/wemos/) directory, along with some helper files like `/etc/init.d/wemos` script...*
+
 Basic concept:
 Listen to UPnP-SSDP-Search requests on the network & give similar answers a Wemo&reg; device would.
 By 'similar' I mean a reduced functionality - I doubt anybody would like to receive a firmware
@@ -38,5 +40,3 @@ Some hints if you want to use the code:
     hair stand on end - at least I feel that the frequent iterations through lists to retrieve attributes/whatevers should
     be solved more elegantly ( `"select * from switches where name=$_name"` ...)
 
-
-*__Installation instructions__ can be found in the [tools/wemos](/tools/wemos/) directory, along with some helper files like `/etc/init.d/wemos` script...*
