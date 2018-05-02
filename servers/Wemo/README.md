@@ -1,10 +1,10 @@
-About the Wemo-Emulator
+### About the Wemo-Emulator
 
 First things first: big thanks to [Maker Musings](http://www.makermusings.com/2015/07/13/amazon-echo-and-home-automation/) for the original "[Fauxmo](https://github.com/makermusings/fauxmo)" Python code.
 
 *__Installation instructions__ can be found in the [tools/wemos](/tools/wemos/) directory, along with some helper files like `/etc/init.d/wemos` script...*
 
-Basic concept:
+#### Basic concept:
 Listen to UPnP-SSDP-Search requests on the network & give similar answers a Wemo&reg; device would.
 By 'similar' I mean a reduced functionality - I doubt anybody would like to receive a firmware
 update for the emulator ;)
@@ -30,7 +30,7 @@ that Web-GUI on my raspi to 'manually' toggle a relay/light or a cronjob decides
 Since I have more than one Raspi with attached relay-cards, a shell-script [MQTT listener](/tools/wemos/var/lib/wemos/bin) runs in the
 background sending a USR1 singnal to the "Wemo-Emulator" when it receives state changes of relevant devices.
 
-Some hints if you want to use the code:
+### Some hints if you want to use the code:
 -  The original Fauxmo code can be considered 'elderly' in IT terms - I used python virtenv to keep nasty surprises
     through python up-dates/-grades to a minimum
 -  The code is plastered with debug statements - best pick a few relevant ones and set their level to '0' rather than
