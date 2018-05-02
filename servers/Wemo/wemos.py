@@ -37,6 +37,9 @@ import urllib
 import uuid
 import signal
 import pickle
+import traceback
+import errno
+
 # import paho.mqtt.publish as publish
 
 _DEBUG = 1
@@ -185,6 +188,7 @@ def send_event(_self):
       _tmpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       try:
         _tmpsock.connect(destination)
+        _dbg(0,"In send_event - trying send")
         _tmpsock.send(message)
       except Exception, e:
         if int(e[0]) == 111:
@@ -196,6 +200,7 @@ def send_event(_self):
           _dbg(0,"removing subscriber...")
           subscriptions_e.append(subscr)
       _tmpsock.shutdown(socket.SHUT_RDWR)
+      _dbg(0,"In send_event - trying socket-close")
       _tmpsock.close()
       del(_tmpsock)
     if subscriptions_e:
@@ -471,8 +476,16 @@ class poller:
         del(self.targets[fileno])
 
     def poll(self, timeout = 0):
+        ready = []
         if self.use_poll:
+          try:
             ready = self.poller.poll(timeout)
+          except Exception, e:
+            if e[0] != errno.EINTR:
+              _dbg(0,"Raising in poll %s" % e[0])
+              raise
+            else:
+              _dbg(0,"In poll skipped EINTR (interrupted sys-call - received SIGUSR?)")
         else:
             ready = []
             if len(self.targets) > 0:
@@ -1080,6 +1093,26 @@ while True:
         break
       else:
         _dbg(0,"Skipping Error: %d - \"%s\"" % (e[0], e[1]))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print "*** print_tb:"
+        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+        print "*** print_exception:"
+        traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                  limit=2, file=sys.stdout)
+        print "*** print_exc:"
+        traceback.print_exc()
+        print "*** format_exc, first and last line:"
+        formatted_lines = traceback.format_exc().splitlines()
+        print formatted_lines[0]
+        print formatted_lines[-1]
+        print "*** format_exception:"
+        print repr(traceback.format_exception(exc_type, exc_value,
+                                              exc_traceback))
+        print "*** extract_tb:"
+        print repr(traceback.extract_tb(exc_traceback))
+        print "*** format_tb:"
+        print repr(traceback.format_tb(exc_traceback))
+        print "*** tb_lineno:", exc_traceback.tb_lineno
         pass
     if time.time() > _refresh_subs_time:
       _dbg(0, "Should refresh now")
