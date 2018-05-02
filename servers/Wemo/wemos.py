@@ -105,7 +105,7 @@ def notify_handler(signum, frame):
   global switches
   _dbg(0,"Signal received - checking for changes and notifying subscribers")
   if _inUpdate == 1:
-    _dbg(0,"Seem like the In-Update flag is set - skipping")
+    _dbg(1,"Seem like the In-Update flag is set - skipping")
     return
   _chgd=[]
   i=0
@@ -124,29 +124,29 @@ def notify_handler(signum, frame):
     else:
        _dbg(1,"In notify_handler can't query switch %s" % switch.get_name())
     i += 1
-  _dbg(0,"Notifying these: %s" % _chgd)
+  _dbg(1,"Notifying these: %s" % _chgd)
   for _chg in _chgd:
     _dbg(0,"Will send notify to: %s" % switches[_chg].name )
     switches[_chg].notify_subscribers()
 
 def remove_subscribers(_self, subs):
-  _dbg(0,"Entering remove_subscribers")
+  _dbg(1,"Entering remove_subscribers")
   _dbg(0,"Trying to remove %s from list of subscribers" % subs)
   _subs=load_obj(_self.subsfile)
   subs_w = []
   for sub_e in subs:
     for _sub in _subs:
       if sub_e == _sub:
-        _dbg(0,"Found %s in list of subscribers - won't add" % sub_e)
+        _dbg(1,"Found %s in list of subscribers - won't add" % sub_e)
         continue
       else:
-        _dbg(0,"Keeping %s in list of subscribers" % _sub)
+        _dbg(1,"Keeping %s in list of subscribers" % _sub)
         subs_w.append(_sub)
   save_obj(subs_w,_self.subsfile)
-  _dbg(0,"Hopefully written: %s" % subs_w)
+  _dbg(1,"Hopefully written: %s" % subs_w)
 
 def send_event(_self):
-    _dbg(0,"Entering re-written send_event")
+    _dbg(1,"Entering re-written send_event")
     _host = "%s:%s" % ( _self.ip_address, _self.port )
     _filen = _self.subsfile
     seq = _self.seq
@@ -154,18 +154,18 @@ def send_event(_self):
     subscriptions = []
     subscriptions_e = []
     subscriptions = load_obj(_filen)
-    _dbg(0,"Received Subs: %s" % subscriptions)
+    _dbg(1,"Received Subs: %s" % subscriptions)
     subscr = {}
     for subscr in subscriptions:
-      _dbg(1,"Received Sub: %s" % subscr)
+      _dbg(2,"Received Sub: %s" % subscr)
       ip = subscr['ip']
       port = subscr['port']
       subsurl = subscr['url']
-      _dbg(0,"Subscriber: %s:%s on URL: %s" % (ip,port,subsurl))
+      _dbg(1,"Subscriber: %s:%s on URL: %s" % (ip,port,subsurl))
       destination = (ip, int(port))
       # _state = get_switch_state(_self.name) # <- this was old, but it actually queried the controlled device for its state, rather than just read-out the supposed state
       _state = _self.state
-      _dbg(0,"In send_event try getting cached switch state as %s" % _self.state)
+      _dbg(1,"In send_event try getting cached switch state as %s" % _self.state)
       xml = ("<?xml version=\"1.0\"?>"
              "<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">"
              "<e:property>"
@@ -188,7 +188,7 @@ def send_event(_self):
       _tmpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       try:
         _tmpsock.connect(destination)
-        _dbg(0,"In send_event - trying send")
+        _dbg(1,"In send_event - trying send")
         _tmpsock.send(message)
       except Exception, e:
         if int(e[0]) == 111:
@@ -200,14 +200,14 @@ def send_event(_self):
           _dbg(0,"removing subscriber...")
           subscriptions_e.append(subscr)
       _tmpsock.shutdown(socket.SHUT_RDWR)
-      _dbg(0,"In send_event - trying socket-close")
+      _dbg(3,"In send_event - trying socket-close")
       _tmpsock.close()
       del(_tmpsock)
     if subscriptions_e:
       _dbg(0,"Removing subscribers %s" % subscriptions_e)
       remove_subscribers(_self, subscriptions_e)
     else:
-      _dbg(0,"No subscribers to remove")
+      _dbg(1,"No subscribers to remove")
     return True
 
 # <deviceType>urn:MakerMusings:device:controllee:1</deviceType>
