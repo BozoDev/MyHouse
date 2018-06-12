@@ -1,5 +1,4 @@
 #include <stdio.h>
-
 #include <pigpio.h>
 
 #define HALL 26
@@ -7,10 +6,17 @@
 void alert(int gpio, int level, uint32_t tick)
 {
    static uint32_t lastTick=0;
+   static int counter=0;
 
    if ( level != 1 )
       return;
-   if (lastTick) printf("%.4f\n", (float)(tick-lastTick)/1000000.0);
+   if ( counter < 75 ) {
+      counter++;
+      return;
+   } else {
+      if (lastTick) printf("%.4f\n", (float)(tick-lastTick)/1000000.0);
+      counter = 0;
+  }
 //   else          printf("0.00\n");
 
    lastTick = tick;
