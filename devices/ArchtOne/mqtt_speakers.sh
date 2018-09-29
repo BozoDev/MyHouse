@@ -2,6 +2,9 @@
 ##########################
 # MQTT Shell Listen & Exec
 
+# labomba-l & labomba-r are dns-resolvable names of the Archt
+#  speakers left & right of TV
+
 DEBUG=${DEBUG:-0}
 
 . /usr/local/etc/speakers
@@ -10,8 +13,7 @@ p="/run/mqtt_listener/mqtt_speaker_backpipe"
 pidfile="/run/mqtt_listener/mqtt_speaker_helper.pid"
 clean="$pidfile"
 _topic="speakers/+/set_state"
-# _broker="localhost"
-_broker="pi3gate"
+_broker="localhost"
 _mqtt_id="pi3gate/speaker-switch"
 _mqtt_ops="-v -m 1"
 
@@ -42,16 +44,6 @@ process_speaker(){
       _cmd="setVolume"
       ;;
   esac
-  # for (( i=0;i<${#speakers[@]};i++ ))
-  # do
-  #   [ $DEBUG -gt 0 ] && echo "DEBUG: Checking $speaker in ${speakers[i]}"
-  #   if [ "$speaker" == "${speakers[i]}" ]
-  #   then
-  #     break
-  #   fi
-  # done
-  # if [ $i -ge 0 ] && [ $i -lt 5 ]
-  # then
   [ $DEBUG -gt 0 ] && echo "DEBUG: setting state and publishing result"
   for _speaker in labomba-l labomba-r
   do
@@ -59,26 +51,16 @@ process_speaker(){
     [ "A$_vol" == "A" ] && continue
     mosquitto_pub -h $_broker -t "speakers/${_speaker}/volume" -m "$_vol"
   done
-  # else
-  #   [ $DEBUG -gt 0 ] && echo "DEBUG: Unknown speaker requested"
-  # fi
 }
 
 listen(){
-  # local last_msg=$( date +%s )
   ([ ! -p "$p" ]) && mkfifo $p
   (mosquitto_sub -v -h $_broker -t $_topic -i $_mqtt_id >$p 2>/dev/null) &
   echo "$!" > $pidfile
   while read line <$p
   do
     speaker=${line#*/}
-# Sometimes we need a break, re-enable if rapid re-fire
-    # if [ $(( $( date +%s ) - $last_msg )) -gt 1 ]
-    # then
-    # # We'll shove this as async, so that we don't miss any publishing...
     process_speaker "${speaker%/*}" "${line##* }" &
-    #   last_msg=$( date +%s )
-    # fi
   done
   [ $DEBUG -gt 0 ] && echo -ne "."
 }
@@ -89,4 +71,3 @@ do
   listen
   sleep 0.2
 done
-
