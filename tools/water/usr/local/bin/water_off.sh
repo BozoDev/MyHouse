@@ -19,7 +19,7 @@ do
     if [ $_tmestmp -gt 1439159077 ] && [ $(( $( date +%s ) - $_tmestmp )) -gt $_def_off ]
     then
       echo "" > $_tmpfle
-      for (( i=0;i<5;i++ ))
+      for (( i=0;i<${#sprinklers[@]};i++ ))
       do
         /usr/local/bin/gpio write $i 1
         $_mqtt_bin -h ${_mqtt_broker} -i ${_mqtt_id} -t "${_mqtt_topic}/${sprinklers[$i]}/state" -m 0
