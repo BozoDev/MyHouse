@@ -854,6 +854,7 @@ class fauxmo(upnp_device):
           #     break
           #   i += 1
           # _dbg(0,"Found tracked state at index %d to be %d" % (i, _st))
+          _dbg(0,"In GetBinaryState reply: State is: %s" % self.state )
           soap = "<?xml version=\"1.0\" encoding=\"utf-8\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><s:Body><u:GetBinaryState xmlns:u=\"urn:Belkin:service:basicevent:1\"><BinaryState>%d</BinaryState></u:GetBinaryState></s:Body></s:Envelope>" % self.state
           date_str = email.utils.formatdate(timeval=None, localtime=False, usegmt=True)
           message = ("HTTP/1.1 200 OK\r\n"
@@ -1037,13 +1038,20 @@ class rest_api_handler(object):
 # http://192.168.1.21/ha-api?cmd=off&a=dining
 
 FAUXMOS = [
-    ['kitchen light', rest_api_handler(_lighturlbase + 'cmd=on&rel=3', _lighturlbase + 'cmd=off&rel=3', _lighturlbase + 'cmd=q&rel=3'),43003,'lightswitch'],
-    ['dining light', rest_api_handler(_lighturlbase + 'cmd=on&rel=0', _lighturlbase + 'cmd=off&rel=0', _lighturlbase + 'cmd=q&rel=0'),43004,'lightswitch'],
-    ['christmas light', rest_api_handler(_lighturlbase + 'cmd=on&rel=7', _lighturlbase + 'cmd=off&rel=7', _lighturlbase + 'cmd=q&rel=7'),43006,'lightswitch'],
-    ['lounge light', rest_api_handler(_lighturlbase + 'cmd=on&rel=2', _lighturlbase + 'cmd=off&rel=2', _lighturlbase + 'cmd=q&rel=2'),43007,'lightswitch'],
-    ['lightstrip light', rest_api_handler(_lighturlbase + 'cmd=on&rel=14', _lighturlbase + 'cmd=off&rel=14', _lighturlbase + 'cmd=q&rel=14'),43008,'lightswitch'],
-    ['hedge sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=0', _sprinklerurlbase + 'cmd=off&valve=0', _sprinklerurlbase + 'cmd=query&valve=0'),43020,'controllee'],
-    ['shed sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=1', _sprinklerurlbase + 'cmd=off&valve=1', _sprinklerurlbase + 'cmd=query&valve=1'),43021,'controllee'],
+    ['corner light', rest_api_handler(_lighturlbase + 'cmd=on&rel=corner', _lighturlbase + 'cmd=off&rel=corner', _lighturlbase + 'cmd=q&rel=corner'),43000,'lightswitch'],
+    ['window light', rest_api_handler(_lighturlbase + 'cmd=on&rel=window', _lighturlbase + 'cmd=off&rel=window', _lighturlbase + 'cmd=q&rel=window'),43001,'lightswitch'],
+    ['forest light', rest_api_handler(_lighturlbase + 'cmd=on&rel=forest', _lighturlbase + 'cmd=off&rel=forest', _lighturlbase + 'cmd=q&rel=forest'),43002,'lightswitch'],
+    ['kitchen light', rest_api_handler(_lighturlbase + 'cmd=on&rel=kitchen', _lighturlbase + 'cmd=off&rel=kitchen', _lighturlbase + 'cmd=q&rel=kitchen'),43003,'lightswitch'],
+    ['dining light', rest_api_handler(_lighturlbase + 'cmd=on&rel=dining', _lighturlbase + 'cmd=off&rel=dining', _lighturlbase + 'cmd=q&rel=dining'),43004,'lightswitch'],
+    ['tree light', rest_api_handler(_lighturlbase + 'cmd=on&rel=tree', _lighturlbase + 'cmd=off&rel=tree', _lighturlbase + 'cmd=q&rel=tree'),43005,'lightswitch'],
+    ['christmas light', rest_api_handler(_lighturlbase + 'cmd=on&rel=christmas', _lighturlbase + 'cmd=off&rel=christmas', _lighturlbase + 'cmd=q&rel=christmas'),43006,'lightswitch'],
+    ['lounge light', rest_api_handler(_lighturlbase + 'cmd=on&rel=lounge', _lighturlbase + 'cmd=off&rel=lounge', _lighturlbase + 'cmd=q&rel=lounge'),43007,'lightswitch'],
+    ['lightstrip light', rest_api_handler(_lighturlbase + 'cmd=on&rel=lightstrip', _lighturlbase + 'cmd=off&rel=lightstrip', _lighturlbase + 'cmd=q&rel=lightstrip'),43008,'lightswitch'],
+    ['hedge sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=hedge', _sprinklerurlbase + 'cmd=off&valve=hedge', _sprinklerurlbase + 'cmd=query&valve=hedge'),43020,'controllee'],
+    ['shed sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=shed', _sprinklerurlbase + 'cmd=off&valve=shed', _sprinklerurlbase + 'cmd=query&valve=shed'),43021,'controllee'],
+    ['garage sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=garage', _sprinklerurlbase + 'cmd=off&valve=garage', _sprinklerurlbase + 'cmd=query&valve=garage'),43022,'controllee'],
+    ['terrace sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=terrace', _sprinklerurlbase + 'cmd=off&valve=terrace', _sprinklerurlbase + 'cmd=query&valve=terrace'),43023,'controllee'],
+    ['ship sprinkler', rest_api_handler(_sprinklerurlbase + 'cmd=on&valve=ship', _sprinklerurlbase + 'cmd=off&valve=ship', _sprinklerurlbase + 'cmd=query&valve=ship'),43024,'controllee'],
     ['Roomba', rest_api_handler('http://roombot/api?action=clean&value=start', 'http://roombot/api?action=dock&value=home'),0],
 ]
 
@@ -1088,32 +1096,35 @@ while True:
         time.sleep(0.1)
     except Exception, e:
       _dbg(0,"Error: %s" % (e))
-      if int(e[0]) != 4 and int(e[0]) != 104:
-        _dbg(0,"ErrNum: %s Reason: %s" % (e[0], e[1]))
-        break
+      if isinstance(e, (int, long)):
+        if int(e[0]) != 4 and int(e[0]) != 104:
+          _dbg(0,"ErrNum: %s Reason: %s" % (e[0], e[1]))
+          break
+        else:
+          _dbg(0,"Skipping Error: %d - \"%s\"" % (e[0], e[1]))
+          exc_type, exc_value, exc_traceback = sys.exc_info()
+          print "*** print_tb:"
+          traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+          print "*** print_exception:"
+          traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                    limit=2, file=sys.stdout)
+          print "*** print_exc:"
+          traceback.print_exc()
+          print "*** format_exc, first and last line:"
+          formatted_lines = traceback.format_exc().splitlines()
+          print formatted_lines[0]
+          print formatted_lines[-1]
+          print "*** format_exception:"
+          print repr(traceback.format_exception(exc_type, exc_value,
+                                                exc_traceback))
+          print "*** extract_tb:"
+          print repr(traceback.extract_tb(exc_traceback))
+          print "*** format_tb:"
+          print repr(traceback.format_tb(exc_traceback))
+          print "*** tb_lineno:", exc_traceback.tb_lineno
+          pass
       else:
-        _dbg(0,"Skipping Error: %d - \"%s\"" % (e[0], e[1]))
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        print "*** print_tb:"
-        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-        print "*** print_exception:"
-        traceback.print_exception(exc_type, exc_value, exc_traceback,
-                                  limit=2, file=sys.stdout)
-        print "*** print_exc:"
-        traceback.print_exc()
-        print "*** format_exc, first and last line:"
-        formatted_lines = traceback.format_exc().splitlines()
-        print formatted_lines[0]
-        print formatted_lines[-1]
-        print "*** format_exception:"
-        print repr(traceback.format_exception(exc_type, exc_value,
-                                              exc_traceback))
-        print "*** extract_tb:"
-        print repr(traceback.extract_tb(exc_traceback))
-        print "*** format_tb:"
-        print repr(traceback.format_tb(exc_traceback))
-        print "*** tb_lineno:", exc_traceback.tb_lineno
-        pass
+        _dbg(0,"Err: received a non-int error-number: \"%s\"" % e )
     if time.time() > _refresh_subs_time:
       _dbg(0, "Should refresh now")
       # for faux in switches:
