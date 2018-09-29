@@ -1,0 +1,1 @@
+../devices/ArchtOne/mqtt_speakers.sh
