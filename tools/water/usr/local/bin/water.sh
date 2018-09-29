@@ -27,10 +27,10 @@ if [ "A$1" == "A-c" ]
 then
 	_amnt=$( /usr/local/bin/rain_calc.sh )
         _skipWatering=0
-        _careMessage="Didn't water the garden, due to: "
-	if [ $_amnt -gt 300 ]
+        _careMessage="Didn't turn on $2 sprinkler, due to: "
+	if [ $_amnt -gt 140 ]
 	then
-		echo "Exiting due to rain > 30(mm * 10) the past X days..."
+		echo "Exiting due to rain > 20(mm * 10) the past X days..."
 		_careMessage="$_careMessage too much rain in the past 3 days"
 		let _skipWatering++
 	fi
@@ -113,7 +113,7 @@ date -d "+ 1 hour" +%s >$wateringfile
 $switcher $valve $ON 
 /usr/bin/mosquitto_pub -h pi3gate.localdomain -i "pi/garden" -m 1 -r -t "sprinklers/${sprinklers[$valve]}/state"
 sleep 3
-/usr/local/bin/water-guard.sh &
+$( /usr/local/bin/water-guard.sh & )
 sleep $duration
 $switcher $valve $OFF
 /usr/bin/mosquitto_pub -h pi3gate.localdomain -i "pi/garden" -m 0 -r -t "sprinklers/${sprinklers[$valve]}/state"
