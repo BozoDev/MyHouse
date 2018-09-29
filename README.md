@@ -34,6 +34,7 @@ A collection of scripts and tools I use to manage my smart-home.
  * Philips HUE&reg;
  * Neeo Smart Remote&reg;
  * EnOcean&reg; radio switches
+ * Archt One&reg; Network speakers
  
  
  Since there's a huge amount of different concepts and technologies floating around the market, I chose to glue it all together via MQTT. Diverse **sensors** meter things at various (network-) locations and dump their values to an MQTT-Broker.
@@ -57,3 +58,8 @@ Another example would be Wemos "server" implemented in Python, listening for req
  #### Wemo
 
  Quite a while back I stumbled across some python code called '[fauxmo](https://github.com/makermusings/fauxmo)' - simply put, it can expose anything controlable via on/off URL as Wemo device (to e.g. Alexa). Since I also wanted that e.g. homebridge (NodeJS) could pick up the devices, I had to add quite some code. Homebridge also likes to be informed about device changes, so UPnP subscription handling (basic) had to be added. So, the "[Wemo-Emulator](servers/Wemo)" was born.
+
+
+#### Archt One
+
+ Cool speakers, connected via WLan - can play from Line-In,USB (Stick),Apple (-cable), BT or WiFi. BUT - AFAIK - the company folded up & the official way to control them is via an App. Since I also wanted to control them via Alexa&reg; "dimm main speakers", I needed a way to change their volume outside the App. Guess it didn't help I had the only way not friendly for volume regulation. TV -> HDMI-Matrix (ARC) -> Optical out -> Opt2Line conv. { -> interim "Line-In"-Volume-Adjust-Device via IR } -> Speakers "Line-In".  Long story short - the speakers have a port open that takes commands - I've found a few that work (for me & most of the time). It kinda goes round in silly circles, but the setup is: defined in FHEM from where the Hue-proxy picks them up & exports them in a way Alexa can interact with them (jupp & all via MQTT backend for communication ;) ). I added the get/set-Volume script here.
