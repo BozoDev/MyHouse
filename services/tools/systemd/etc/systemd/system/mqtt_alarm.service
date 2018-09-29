@@ -1,0 +1,19 @@
+[Unit]
+Description=Service to listen to MQTT topics and raise an alarm if thresholds are passed
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+User=mqtt-service
+WorkingDirectory=/var/lib/mqtt-service
+EnvironmentFile=/etc/default/mqtt_alarm
+PermissionsStartOnly=true
+ExecStartPre=/var/lib/mqtt-service/startup.sh
+ExecStart=/var/lib/mqtt-service/mqtt_alarm.sh
+Restart=on-failure
+RestartSec=10
+KillMode=process
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target
