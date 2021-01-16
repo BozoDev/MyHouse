@@ -1,6 +1,7 @@
 /var/log/wemos.log {
         daily
         missingok
+	size 10M
         rotate 32
         compress
         delaycompress
